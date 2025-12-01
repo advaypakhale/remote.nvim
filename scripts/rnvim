@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Remote Neovim wrapper script
+# This ensures isolated config and data directories
+# Tools are only added to PATH if not already available on the system
+
+# Set XDG directories to keep everything isolated
+export XDG_CONFIG_HOME="$HOME/.remote-nvim/config"
+export XDG_DATA_HOME="$HOME/.remote-nvim/data"
+export XDG_STATE_HOME="$HOME/.remote-nvim/state"
+
+# Set the Neovim app name
+export NVIM_APPNAME="nvim"
+
+# Create tools directory for selective PATH additions
+TOOLS_DIR="$HOME/.remote-nvim/tools"
+mkdir -p "$TOOLS_DIR"
+
+# Only symlink tools that don't exist on the system
+# This prevents conflicts with system-installed versions
+if ! command -v rg &>/dev/null && [ -f "$HOME/.remote-nvim/bin/rg" ]; then
+	ln -sf "$HOME/.remote-nvim/bin/rg" "$TOOLS_DIR/rg"
+fi
+
+if ! command -v fd &>/dev/null && [ -f "$HOME/.remote-nvim/bin/fd" ]; then
+	ln -sf "$HOME/.remote-nvim/bin/fd" "$TOOLS_DIR/fd"
+fi
+
+# Add only the tools directory to PATH
+# Note: nvim binary stays in bin/ and is called directly (not added to PATH)
+export PATH="$TOOLS_DIR:$PATH"
+
+# Run Neovim directly from bin directory
+exec "$HOME/.remote-nvim/bin/nvim" "$@"
