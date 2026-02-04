@@ -8,7 +8,7 @@ local M = {}
 function M.run_in_float(command)
   -- Create scratch buffer
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+  vim.bo[buf].bufhidden = "wipe"
 
   -- Calculate window size (80% of screen)
   local width = math.floor(vim.o.columns * 0.8)
@@ -26,9 +26,6 @@ function M.run_in_float(command)
     style = "minimal",
     border = "rounded",
   })
-
-  -- Set window options
-  vim.api.nvim_win_set_option(win, "winblend", 0)
 
   -- Run command in terminal
   vim.fn.termopen(command, {

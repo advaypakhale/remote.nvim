@@ -225,7 +225,7 @@ ensure_ripgrep_cached() {
     else
         log_info "Downloading ripgrep..."
 
-        local temp_dir=$(mktemp -d)
+        local temp_dir="$(mktemp -d)"
         local tar_file="$temp_dir/ripgrep.tar.gz"
 
         if ! curl -fsSL -o "$tar_file" "$RIPGREP_URL"; then
@@ -267,7 +267,7 @@ ensure_fd_cached() {
     else
         log_info "Downloading fd..."
 
-        local temp_dir=$(mktemp -d)
+        local temp_dir="$(mktemp -d)"
         local tar_file="$temp_dir/fd.tar.gz"
 
         if ! curl -fsSL -o "$tar_file" "$FD_URL"; then
@@ -370,7 +370,8 @@ setup_remote() {
         }
     else
         # Fallback to scp
-        scp $SSH_OPTS -r "$CONFIG_DIR" "$host:$REMOTE_DIR/config/nvim" || {
+        ssh $SSH_OPTS "$host" "rm -rf $REMOTE_DIR/config/nvim && mkdir -p $REMOTE_DIR/config/nvim"
+        scp $SSH_OPTS -r "$CONFIG_DIR/"* "$host:$REMOTE_DIR/config/nvim/" || {
             log_error "Failed to transfer config files"
             exit 1
         }
@@ -566,8 +567,4 @@ parse_args() {
 # Main
 # ============================================================================
 
-main() {
-    parse_args "$@"
-}
-
-main "$@"
+parse_args "$@"

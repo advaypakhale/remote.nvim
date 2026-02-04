@@ -38,9 +38,8 @@ end
 
 ---Parse a single SSH config file
 ---@param file_path string
----@param parent_file string|nil
 ---@return table[] hosts List of host entries
-local function parse_file(file_path, parent_file)
+local function parse_file(file_path)
   file_path = vim.fn.expand(file_path)
 
   -- Check if file exists
@@ -104,7 +103,7 @@ function M.parse_ssh_config(config_paths)
   local seen_hosts = {}
 
   for _, config_path in ipairs(config_paths) do
-    local hosts = parse_file(config_path, nil)
+    local hosts = parse_file(config_path)
 
     -- Deduplicate hosts (first occurrence wins)
     for _, host in ipairs(hosts) do

@@ -9,9 +9,6 @@ export XDG_CONFIG_HOME="$HOME/.remote-nvim/config"
 export XDG_DATA_HOME="$HOME/.remote-nvim/data"
 export XDG_STATE_HOME="$HOME/.remote-nvim/state"
 
-# Set the Neovim app name
-export NVIM_APPNAME="nvim"
-
 # Create tools directory for selective PATH additions
 TOOLS_DIR="$HOME/.remote-nvim/tools"
 mkdir -p "$TOOLS_DIR"

@@ -1,10 +1,14 @@
 # remote.nvim
 
-A Neovim plugin for easily deploying and syncing your Neovim configuration to remote machines via SSH.
+Deploy your Neovim configuration to remote machines over SSH. Downloads Neovim, ripgrep, and fd, transfers them along with your config, and sets up an isolated environment that won't interfere with anything on the remote host.
+
+## Requirements
+
+- **Local:** ssh, curl, tar (rsync recommended but optional)
+- **Remote:** Linux x86_64 (all tools are provided — nothing needs to be pre-installed)
+- **Neovim:** >= 0.8.0
 
 ## Installation
-
-Using your preferred plugin manager:
 
 ```lua
 -- lazy.nvim
@@ -12,7 +16,8 @@ Using your preferred plugin manager:
   "advaypakhale/remote.nvim",
   config = function()
     require("remote").setup({
-      ssh_config_path = "~/.ssh/config",  -- or { "~/.ssh/config", "~/.ssh/work_config" }
+      -- default; can also be a list: { "~/.ssh/config", "~/.ssh/work_config" }
+      ssh_config_path = "~/.ssh/config",
     })
   end,
 }
@@ -20,15 +25,15 @@ Using your preferred plugin manager:
 
 ## Usage
 
-### Interactive Mode (with picker)
+### Interactive (host picker from SSH config)
 
 ```vim
-:RemoteSetup    " Opens picker to select host from SSH config
-:RemoteSync     " Opens picker to select host to sync neovim config
-:RemoteCleanup  " Opens picker to select host to cleanup everything set up on host by the plugin
+:RemoteSetup       " set up Neovim on a remote host
+:RemoteSync        " sync local config changes to a remote host
+:RemoteCleanup     " remove everything the plugin installed on a remote host
 ```
 
-### Direct Mode (with arguments)
+### Direct
 
 ```vim
 :RemoteSetup myserver
@@ -37,33 +42,49 @@ Using your preferred plugin manager:
 :RemoteCleanup myserver --yes
 ```
 
-All arguments after the command are passed directly to the underlying bash script.
+Arguments after the host are passed directly to the underlying shell script.
 
-## Directory Structure
+### On the remote host
 
-```
-remote.nvim/
-├── plugin/          # Plugin registration
-├── lua/remote/      # Lua modules
-│   ├── init.lua     # Main logic
-│   ├── config.lua   # Configuration
-│   ├── ssh.lua      # SSH config parser
-│   └── ui.lua       # Floating terminal
-└── scripts/         # Shell scripts
-    ├── remote-nvim.sh  # Main deployment script
-    └── rnvim           # Remote wrapper script
-```
-
-## Cache Location
-
-Binaries (Neovim, ripgrep, fd) are cached at:
-- `~/.local/share/nvim/remote.nvim/cache` (or `$XDG_DATA_HOME/nvim/remote.nvim/cache`)
-
-This allows the cache to persist across plugin updates.
-
-## Remote Usage
-
-After setup, SSH into your remote host and run:
 ```bash
-~/.remote-nvim/rnvim
+~/.remote-nvim/rnvim [file]
 ```
+
+Plugins will install automatically on first launch.
+
+## What gets deployed
+
+Everything is installed under `~/.remote-nvim/` on the remote host:
+
+- `bin/nvim` — Neovim AppImage (latest release)
+- `bin/rg` — ripgrep 14.1.0 (only added to PATH if not already installed)
+- `bin/fd` — fd 10.3.0 (only added to PATH if not already installed)
+- `config/nvim/` — your Neovim configuration (excluding `.git`, `.gitignore`, `lazy-lock.json`)
+- `rnvim` — wrapper script that runs Neovim with isolated XDG directories
+
+The remote environment is fully isolated — XDG_CONFIG_HOME, XDG_DATA_HOME, and XDG_STATE_HOME are all scoped to `~/.remote-nvim/`.
+
+## Local cache
+
+Binaries are cached at `${XDG_DATA_HOME:-~/.local/share}/nvim/remote.nvim/cache/` so they aren't re-downloaded on every setup. Delete this directory to force a fresh download.
+
+## Standalone usage
+
+The shell script can be used independently of Neovim:
+
+```bash
+./scripts/remote-nvim.sh setup user@host
+./scripts/remote-nvim.sh sync user@host
+./scripts/remote-nvim.sh cleanup user@host
+./scripts/remote-nvim.sh --help
+```
+
+## Limitations
+
+- Remote host must be **Linux x86_64** (the downloaded binaries are architecture-specific)
+- The Neovim AppImage URL tracks `latest` — delete the local cache to pick up new Neovim releases
+- SSH config parsing handles common cases (Host, HostName, User, Include) but not the full spec
+
+## License
+
+MIT

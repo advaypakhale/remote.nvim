@@ -57,9 +57,6 @@ local function pick_and_execute(action)
   -- Show picker
   vim.ui.select(items, {
     prompt = string.format("Select host for %s:", action),
-    format_item = function(item)
-      return item
-    end,
   }, function(choice)
     if choice then
       local hostname = host_map[choice]
