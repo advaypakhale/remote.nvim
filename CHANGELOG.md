@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/advaypakhale/remote.nvim/compare/v0.1.0...v0.2.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* :Remote connect is now :Remote install, and no longer opens a Neovim session.
+
+### Features
+
+* install and exit instead of opening a Neovim session ([3980b13](https://github.com/advaypakhale/remote.nvim/commit/3980b1343ba9729bcd8a897ab5e54c70a57712b6))
+
 ## 0.1.0 (2026-07-30)
 
 
