@@ -16,13 +16,15 @@ CONTENTS                                                *remote-nvim-contents*
 1. INTRODUCTION                                     *remote-nvim-introduction*
 
 remote.nvim installs a Neovim binary, your config, and any tools you declare into
-a single directory under `$HOME` on a remote machine or container, then runs
-Neovim there over ssh or `docker exec`.
+a single directory under `$HOME` on a remote machine or container.
 
-Everything is written inside that one directory, with all four XDG directories
-redirected into it, so an existing Neovim on the target is left alone.
+Its config, data, state and cache directories are all redirected into that one
+directory, so an existing Neovim on the target keeps its own.
 
-Provisioning is idempotent. Running |:Remote| again pushes config changes;
+Starting Neovim on the target is left to you. Installing prints the command to
+run; see |remote-nvim-layout|.
+
+Installing is idempotent. Running |:Remote| again pushes config changes;
 binaries are downloaded only when the version recorded on the target differs
 from the one you want.
 
@@ -32,30 +34,32 @@ from the one you want.
 Local:
   - Neovim >= 0.11
   - `ssh`
+  - `tar`
   - `curl`, used when the target cannot download for itself
   - `docker`, for container targets
 
 Target:
-  - `sh` and `tar` (busybox versions work)
+  - a POSIX shell, `tar`, and the usual utilities such as `find`, `cp`, `ln`
+    and `id` (busybox versions work)
   - glibc
 
 ==============================================================================
 3. COMMANDS                                             *remote-nvim-commands*
 
                                                                      *:Remote*
-:Remote                 Prompt for a target and connect.
+:Remote                 Prompt for a target and install.
 
-:Remote connect [{target}] [{ssh-args}...]
-                        Provision {target} and launch Neovim on it. Prompts
-                        when {target} is omitted. Further arguments are passed
-                        to `ssh`: >vim
+:Remote install [{target}] [{ssh-args}...]
+                        Install onto {target}, then print the command to start
+                        Neovim there. Prompts when {target} is omitted. Further
+                        arguments are passed to `ssh`: >vim
 
-                            :Remote connect box -p 2222 -i ~/.ssh/key
+                            :Remote install box -p 2222 -i ~/.ssh/key
 <
                         {target} is an ssh host, or `docker:{container}` for a
                         running container.
 
-:Remote! connect [{target}]
+:Remote! install [{target}]
                         Reinstall binaries even when the target already records
                         the right versions.
 
@@ -72,6 +76,7 @@ Configuration is optional; the defaults work without calling `setup()`. >lua
 
     require("remote").setup({
       ssh_config_path = { "~/.ssh/config" },
+      config_dir = nil,
       prefix = "~/.remote-nvim",
       app_name = "nvim",
       nvim_version = nil,
@@ -84,6 +89,11 @@ Configuration is optional; the defaults work without calling `setup()`. >lua
 ssh_config_path ~
         `string|string[]`, default `{ "~/.ssh/config" }`
         Files scanned for host names.
+
+config_dir ~
+        `string?`, default `nil`
+        Config tree to copy to the target. When unset, `stdpath("config")` is
+        used, so it follows `NVIM_APPNAME` locally.
 
 prefix ~
         `string`, default `"~/.remote-nvim"`
@@ -184,14 +194,19 @@ Everything lives under `prefix`, `~/.remote-nvim` by default: >
       config/{app_name}/    your config
       data/  state/  cache/ XDG directories
       rnvim                 launcher that sets the environment and runs Neovim
-      manifest              installed versions
+      manifest              installed versions and target platform
 <
 The config directory is replaced on every run, so files deleted locally also
 disappear on the target. Plugins live in `data/`, so this does not trigger a
 reinstall.
 
-To use the target's Neovim without going through |:Remote|, run
-`~/.remote-nvim/rnvim` over ssh.
+`rnvim` is what you run to start Neovim on the target. It sets `NVIM_APPNAME` and
+the four XDG variables, puts any installed tools on `PATH`, and execs the Neovim
+binary: >
+
+    ssh -t myserver ~/.remote-nvim/rnvim
+    docker exec -it mycontainer ~/.remote-nvim/rnvim
+<
 
 ==============================================================================
 8. LIMITATIONS                                       *remote-nvim-limitations*

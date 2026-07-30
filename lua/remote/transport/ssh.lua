@@ -32,14 +32,18 @@ function SSH:_base(master)
   return vim.list_extend(argv, self.conn_opts)
 end
 
----@param opts? { tty?: boolean }
-function SSH:argv(script, opts)
+function SSH:argv(script)
   local argv = self:_base("auto")
-  if opts and opts.tty then
-    table.insert(argv, "-t")
-  end
   vim.list_extend(argv, { self.host, "/bin/sh -c " .. transport.quote(script) })
   return argv
+end
+
+---@return string command The user runs this themselves, in their own terminal
+function SSH:launch_hint(command)
+  local argv = { "ssh", "-t" }
+  vim.list_extend(argv, self.conn_opts)
+  vim.list_extend(argv, { self.host, command })
+  return table.concat(argv, " ")
 end
 
 function SSH:label()

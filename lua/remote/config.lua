@@ -1,5 +1,6 @@
 ---@class remote.Config
 ---@field ssh_config_path? string|string[]
+---@field config_dir? string Config tree to copy; defaults to `stdpath("config")`
 ---@field prefix? string Install root on the target
 ---@field app_name? string NVIM_APPNAME on the target
 ---@field nvim_version? string Defaults to the local Neovim's version
@@ -22,6 +23,7 @@ local defaults = {
 ---The single source of truth for what options exist and what they accept.
 local OPTIONS = {
   ssh_config_path = { types = { "string", "table" } },
+  config_dir = { types = "string", optional = true },
   prefix = { types = "string" },
   app_name = { types = "string" },
   nvim_version = { types = "string", optional = true },
@@ -61,6 +63,13 @@ local function validate(cfg)
       error(("remote.nvim: copy_dirs key must be data, state or cache (got '%s')"):format(kind), 0)
     end
     vim.validate("copy_dirs." .. kind, dirs, "table")
+
+    for _, dir in ipairs(dirs) do
+      -- These become paths on the target, so they must stay inside the prefix.
+      if dir:find("..", 1, true) or dir:sub(1, 1) == "/" then
+        error(("remote.nvim: copy_dirs entry must be a relative subdirectory (got '%s')"):format(dir), 0)
+      end
+    end
   end
 end
 

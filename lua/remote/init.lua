@@ -11,6 +11,9 @@ end
 local function resolve(spec, conn_opts)
   local container = spec:match("^docker:(.+)$")
   if container then
+    if conn_opts and #conn_opts > 0 then
+      vim.notify("remote.nvim: extra arguments only apply to ssh targets", vim.log.levels.WARN)
+    end
     return require("remote.transport.docker").new(container)
   end
   return require("remote.transport.ssh").new(spec, conn_opts)
@@ -70,10 +73,10 @@ end
 ---@param spec string? Prompts when omitted
 ---@param conn_opts string[]?
 ---@param force boolean? Reinstall binaries even if the manifest matches
-function M.connect(spec, conn_opts, force)
+function M.install(spec, conn_opts, force)
   if spec == nil then
-    return pick("Connect to:", function(chosen)
-      M.connect(chosen, conn_opts, force)
+    return pick("Install Neovim on:", function(chosen)
+      M.install(chosen, conn_opts, force)
     end)
   end
   require("remote.install").run(resolve(spec, conn_opts), force)

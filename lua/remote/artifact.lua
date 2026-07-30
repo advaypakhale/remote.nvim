@@ -89,9 +89,13 @@ function M.install_nvim(t, target, prefix, version)
   local url = ("https://github.com/neovim/neovim/releases/download/%s/nvim-%s-%s.tar.gz"):format(version, os_name, arch)
   local dest = q(layout.nvim(prefix, version))
 
+  local root = q(vim.fs.dirname(layout.nvim(prefix, version)))
+
   unpack(t, target, url, {
     prepare = ("rm -rf %s\nmkdir -p %s"):format(dest, dest),
     consume = ("tar -xz -C %s --strip-components=1"):format(dest),
+    -- Drop other versions only once this one has extracted.
+    finish = ('for d in %s/*; do [ "$d" = %s ] || rm -rf "$d"; done'):format(root, dest),
   }, "install Neovim " .. version)
 end
 
@@ -104,7 +108,11 @@ end
 ---@param target remote.Target
 ---@return string
 function M.tool_version(spec, target)
-  return spec.version or spec.url(M.platform(target))
+  local version = spec.version or spec.url(M.platform(target))
+  if type(version) ~= "string" then
+    error("a tool needs a version, or a url function that returns a string", 0)
+  end
+  return version
 end
 
 ---@param t remote.Transport

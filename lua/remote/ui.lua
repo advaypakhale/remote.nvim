@@ -1,6 +1,6 @@
 local M = {}
 
-local MARKS = { active = "▸", done = "✓", skip = "·", warn = "!", fail = "✗" }
+local MARKS = { active = "▸", done = "✓", skip = "·", warn = "!", fail = "✗", info = " " }
 
 local function float(title, height)
   local buf = vim.api.nvim_create_buf(false, true)
@@ -30,13 +30,13 @@ local function close(win)
   end
 end
 
----Run argv in a floating terminal, closing it on success. Must be called from a
----coroutine; it yields until the job exits.
+---Run argv in a floating terminal so it can prompt, closing it on success. Must be
+---called from a coroutine; it yields until the job exits.
 ---@param argv string[]
 ---@return integer code
 function M.terminal(argv, title)
   local co = assert(coroutine.running(), "ui.terminal requires a coroutine")
-  local _, win = float(title, math.floor(vim.o.lines * 0.7))
+  local _, win = float(title, 12)
 
   vim.fn.jobstart(argv, {
     term = true,
@@ -104,6 +104,10 @@ end
 
 function Progress:warn(text)
   self:_push("warn", text)
+end
+
+function Progress:info(text)
+  self:_push("info", text)
 end
 
 function Progress:fail(text)
