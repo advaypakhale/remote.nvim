@@ -5,10 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This plugin is deliberately small. Requests that would add a required
-        dependency, assume something about the target, or teach the plugin about a
-        specific plugin manager are unlikely to be accepted. See
-        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#design-constraints).
+        See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#scope) for what is in scope.
 
   - type: textarea
     id: problem

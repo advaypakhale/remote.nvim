@@ -7,5 +7,5 @@
 <!-- There is no test suite, so say what you ran this against. -->
 
 - [ ] `stylua lua plugin` produces no changes
-- [ ] Holds the [design constraints](../blob/main/CONTRIBUTING.md#design-constraints)
+- [ ] Stays within [scope](../blob/main/CONTRIBUTING.md#scope)
 - [ ] `doc/remote-nvim.txt` updated if behaviour or configuration changed
