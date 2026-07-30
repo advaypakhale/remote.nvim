@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check lua plugin
+
+  spelling:
+    name: Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@master
+
+  check:
+    name: Neovim ${{ matrix.neovim }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        neovim: [v0.11.0, stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.neovim }}
+
+      - name: Load modules, register commands, build helptags
+        run: |
+          nvim --clean -l - <<'LUA'
+          vim.opt.runtimepath:prepend(vim.uv.cwd())
+
+          for _, file in ipairs(vim.fn.glob("lua/remote/**/*.lua", false, true)) do
+            local module = file:gsub("^lua/", ""):gsub("%.lua$", ""):gsub("/init$", ""):gsub("/", ".")
+            local ok, err = pcall(require, module)
+            assert(ok, ("%s failed to load: %s"):format(module, err))
+          end
+
+          vim.cmd("runtime plugin/remote.lua")
+          assert(vim.fn.exists(":Remote") == 2, ":Remote was not registered")
+          assert(#vim.fn.getcompletion("Remote ", "cmdline") == 2, "subcommand completion is broken")
+
+          vim.cmd("helptags doc")
+          vim.cmd("checkhealth remote")
+
+          print("ok")
+          LUA
+
+  # Single required status check, so branch protection does not need updating
+  # whenever the matrix changes.
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    needs: [format, spelling, check]
+    if: always()
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          [ "${{ needs.format.result }}"   = "success" ] || exit 1
+          [ "${{ needs.spelling.result }}" = "success" ] || exit 1
+          [ "${{ needs.check.result }}"    = "success" ] || exit 1
