@@ -85,14 +85,14 @@ end
 
 ---Idempotent, and free of UI so it can be driven headlessly.
 ---@param t remote.Transport
----@param progress remote.Progress
+---@param report fun(message: string, level?: integer)
 ---@param force boolean? Reinstall binaries even when the manifest matches
 ---@return string prefix
-function M.provision(t, progress, force)
+function M.provision(t, report, force)
   local cfg = config.get()
   local source = local_config_dir(cfg)
 
-  progress:step("Probing " .. t:label())
+  report("probing " .. t:label())
   local target = target_mod.probe(t)
   if target.libc == "musl" then
     error("musl target unsupported: Neovim publishes no musl build", 0)
@@ -109,31 +109,32 @@ function M.provision(t, progress, force)
   for _, item in ipairs(artifacts(t, target, prefix, cfg, tool_names, version)) do
     desired[item.key] = item.version
     if force or manifest[item.key] ~= item.version then
-      progress:step("Installing " .. item.label)
+      report("installing " .. item.label)
       item.install()
     else
-      progress:skip(item.label)
+      report(item.label .. " is already installed")
     end
   end
 
-  progress:step("Copying config")
+  report("copying config")
   transport.push_dir(t, source, layout.app(prefix, "config", cfg.app_name), { exclude = cfg.exclude })
 
   local uname = vim.uv.os_uname()
   if not vim.tbl_isempty(cfg.copy_dirs) and (uname.sysname ~= target.os or uname.machine ~= target.arch) then
-    progress:warn(
+    report(
       ("%s/%s → %s/%s: compiled artifacts in copy_dirs may not run"):format(
         uname.sysname,
         uname.machine,
         target.os,
         target.arch
-      )
+      ),
+      vim.log.levels.WARN
     )
   end
 
   for _, kind in ipairs({ "data", "state", "cache" }) do
     for _, subdir in ipairs(cfg.copy_dirs[kind] or {}) do
-      progress:step(("Copying %s/%s"):format(kind, subdir))
+      report(("copying %s/%s"):format(kind, subdir))
       transport.push_dir(
         t,
         vim.fs.joinpath(vim.fn.stdpath(kind), subdir),
@@ -142,18 +143,22 @@ function M.provision(t, progress, force)
     end
   end
 
-  progress:step("Installing launcher")
+  report("installing launcher")
   transport.push_file(t, launcher(prefix, version, cfg.app_name, tool_names), layout.launcher(prefix), "755")
   target_mod.write_manifest(t, prefix, desired)
 
   return prefix
 end
 
+local function notify(message, level)
+  vim.notify("remote.nvim: " .. message, level or vim.log.levels.INFO)
+end
+
 local function in_coroutine(fn)
   coroutine.wrap(function()
     local ok, err = pcall(fn)
     if not ok then
-      vim.notify("remote.nvim: " .. tostring(err), vim.log.levels.ERROR)
+      notify(tostring(err), vim.log.levels.ERROR)
     end
   end)()
 end
@@ -170,16 +175,8 @@ function M.run(t, force)
   in_coroutine(function()
     connect(t)
 
-    local progress = ui.progress("remote.nvim → " .. t:label())
-    local ok, result = pcall(M.provision, t, progress, force)
-    if not ok then
-      progress:fail(tostring(result))
-      return
-    end
-
-    progress:info("")
-    progress:info("Start Neovim on " .. t:label() .. " with:")
-    progress:info("  " .. t:launch_hint(q(layout.launcher(result))))
+    local prefix = M.provision(t, notify, force)
+    notify(("start Neovim on %s with:\n%s"):format(t:label(), t:launch_hint(q(layout.launcher(prefix)))))
   end)
 end
 
@@ -190,7 +187,7 @@ function M.cleanup(t)
 
     local prefix = config.prefix(target_mod.probe(t).home)
     transport.check(t, ("rm -rf %s"):format(q(prefix)), "remove " .. prefix)
-    vim.notify(("remote.nvim: removed %s from %s"):format(prefix, t:label()))
+    notify(("removed %s from %s"):format(prefix, t:label()))
   end)
 end
 
