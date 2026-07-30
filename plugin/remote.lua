@@ -1,35 +1,43 @@
--- remote.nvim plugin registration
--- This file is automatically loaded by Neovim
-
-if vim.fn.has("nvim-0.8.0") == 0 then
-  vim.api.nvim_err_writeln("remote.nvim requires Neovim >= 0.8.0")
+if vim.fn.has("nvim-0.11.0") == 0 then
+  vim.notify("remote.nvim requires Neovim >= 0.11", vim.log.levels.ERROR)
   return
 end
 
--- Prevent loading twice
 if vim.g.loaded_remote_nvim then
   return
 end
 vim.g.loaded_remote_nvim = 1
 
--- Register commands
-vim.api.nvim_create_user_command("RemoteSetup", function(opts)
-  require("remote").setup_command(opts.args)
-end, {
-  nargs = "*",
-  desc = "Setup Neovim on remote host",
-})
+local subcommands = {
+  connect = function(args, opts)
+    require("remote").connect(args[1], vim.list_slice(args, 2), opts.bang)
+  end,
+  cleanup = function(args)
+    require("remote").cleanup(args[1])
+  end,
+}
 
-vim.api.nvim_create_user_command("RemoteSync", function(opts)
-  require("remote").sync_command(opts.args)
+vim.api.nvim_create_user_command("Remote", function(opts)
+  local name = opts.fargs[1] or "connect"
+  local impl = subcommands[name]
+  if impl == nil then
+    vim.notify(("remote.nvim: unknown subcommand '%s'"):format(name), vim.log.levels.ERROR)
+    return
+  end
+  impl(vim.list_slice(opts.fargs, 2), opts)
 end, {
   nargs = "*",
-  desc = "Sync config to remote host",
-})
+  bang = true,
+  desc = "Transplant Neovim onto an ssh host or container",
+  complete = function(lead, line)
+    local words = vim.split(vim.trim(line), "%s+", { trimempty = true })
+    local completing_subcommand = #words - (lead == "" and 0 or 1) <= 1
 
-vim.api.nvim_create_user_command("RemoteCleanup", function(opts)
-  require("remote").cleanup_command(opts.args)
-end, {
-  nargs = "*",
-  desc = "Remove Neovim from remote host",
+    local candidates = completing_subcommand and vim.tbl_keys(subcommands) or require("remote").targets()
+    table.sort(candidates)
+
+    return vim.tbl_filter(function(candidate)
+      return vim.startswith(candidate, lead)
+    end, candidates)
+  end,
 })

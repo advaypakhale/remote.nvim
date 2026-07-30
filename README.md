@@ -1,69 +1,123 @@
 # remote.nvim
 
-A Neovim plugin for easily deploying and syncing your Neovim configuration to remote machines via SSH.
+[![CI](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?display_name=tag&sort=semver)](https://github.com/advaypakhale/remote.nvim/releases)
+[![Neovim](https://img.shields.io/badge/Neovim-0.11%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io)
+[![License](https://img.shields.io/github/license/advaypakhale/remote.nvim)](LICENSE)
 
-## Installation
+Run your local Neovim on a remote machine or container.
 
-Using your preferred plugin manager:
+remote.nvim copies a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
+the target, then runs Neovim there over ssh or `docker exec`. Everything stays inside that directory, so an existing
+Neovim on the target is left alone.
+
+- Works over ssh or against a running Docker container
+- Installs the same Neovim version you run locally, matched to the target's OS and architecture
+- Re-run it to push config changes; binaries are only downloaded when the version changes
+- Ships extra binaries, such as `ripgrep` or `fd`, if you ask it to
+- No plugin dependencies
+
+## Requirements
+
+Neovim 0.11+, `ssh` and `curl` locally. `sh` and `tar` on the target. `docker` for container targets.
+
+## Install
+
+With [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
--- lazy.nvim
-{
-  "advaypakhale/remote.nvim",
-  config = function()
-    require("remote").setup({
-      ssh_config_path = "~/.ssh/config",  -- or { "~/.ssh/config", "~/.ssh/work_config" }
-    })
-  end,
-}
+{ "advaypakhale/remote.nvim", opts = {} }
 ```
+
+With `vim.pack`:
+
+```lua
+vim.pack.add({ "https://github.com/advaypakhale/remote.nvim" })
+require("remote").setup({})
+```
+
+Then run `:checkhealth remote`.
 
 ## Usage
 
-### Interactive Mode (with picker)
-
 ```vim
-:RemoteSetup    " Opens picker to select host from SSH config
-:RemoteSync     " Opens picker to select host to sync neovim config
-:RemoteCleanup  " Opens picker to select host to cleanup everything set up on host by the plugin
+:Remote                              " pick a target, then connect
+:Remote connect myserver             " ssh host
+:Remote connect docker:mycontainer   " running container
+:Remote connect box -p 2222          " extra arguments go to ssh
+:Remote! connect myserver            " reinstall binaries
+:Remote cleanup myserver             " remove the install directory
 ```
 
-### Direct Mode (with arguments)
+Completion offers hosts from your ssh config and running containers.
 
-```vim
-:RemoteSetup myserver
-:RemoteSetup user@host --ssh-opts "-i ~/.ssh/key.pem -p 2222"
-:RemoteSync myserver --config-dir ~/custom-nvim
-:RemoteCleanup myserver --yes
+Re-run `:Remote connect` after changing your config to push it again.
+
+## Configuration
+
+All options are optional. Defaults shown:
+
+```lua
+require("remote").setup({
+  ssh_config_path = { "~/.ssh/config" },  -- files scanned for host names
+  prefix = "~/.remote-nvim",              -- install directory on the target
+  app_name = "nvim",                      -- NVIM_APPNAME on the target
+  nvim_version = nil,                     -- nil matches your local Neovim
+  exclude = { ".git" },                   -- excluded from the copied config
+  copy_dirs = {},                         -- extra directories to copy
+  tools = {},                             -- extra binaries to install
+})
 ```
 
-All arguments after the command are passed directly to the underlying bash script.
+See `:help remote-nvim-configuration`.
 
-## Directory Structure
+## Extra tools
 
+Only Neovim and your config are copied by default. To install other binaries on the target:
+
+```lua
+tools = {
+  rg = {
+    version = "14.1.1",
+    bin = "rg",
+    url = function(os, arch)
+      return ("https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-%s-unknown-%s-musl.tar.gz")
+        :format(arch, os)
+    end,
+  },
+}
 ```
-remote.nvim/
-├── plugin/          # Plugin registration
-├── lua/remote/      # Lua modules
-│   ├── init.lua     # Main logic
-│   ├── config.lua   # Configuration
-│   ├── ssh.lua      # SSH config parser
-│   └── ui.lua       # Floating terminal
-└── scripts/         # Shell scripts
-    ├── remote-nvim.sh  # Main deployment script
-    └── rnvim           # Remote wrapper script
+
+`url` receives the target's platform, where `os` is `linux` or `macos` and `arch` is `x86_64` or `arm64`. A tool is
+added to the target's `PATH` only when the target does not already have it.
+
+## Targets without network access
+
+Neovim and your tools are downloaded by the target when it has `wget` or `curl`, and otherwise downloaded locally and
+sent over the connection.
+
+Plugin managers fetch plugins with `git`, which needs network access on the target. When there is none, copy the
+plugins you already have:
+
+```lua
+copy_dirs = { data = { "lazy" } }
 ```
 
-## Cache Location
+The key names a Neovim directory (`data`, `state` or `cache`) and the values are subdirectories inside it.
 
-Binaries (Neovim, ripgrep, fd) are cached at:
-- `~/.local/share/nvim/remote.nvim/cache` (or `$XDG_DATA_HOME/nvim/remote.nvim/cache`)
+A data directory can contain binaries built for your platform, such as treesitter parsers and Mason-installed
+servers. Copying those to a target with a different architecture produces binaries that will not run, and a warning
+is shown when the platforms differ.
 
-This allows the cache to persist across plugin updates.
+## Limitations
 
-## Remote Usage
+- Windows is not supported as the local machine.
+- `devcontainer.json` is not supported. Attaching to a running container works.
 
-After setup, SSH into your remote host and run:
-```bash
-~/.remote-nvim/rnvim
-```
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)
