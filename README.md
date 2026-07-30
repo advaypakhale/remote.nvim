@@ -1,15 +1,23 @@
+<div align="center">
+
 # remote.nvim
 
-[![CI](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?display_name=tag&sort=semver)](https://github.com/advaypakhale/remote.nvim/releases)
-[![Neovim](https://img.shields.io/badge/Neovim-0.11%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io)
-[![License](https://img.shields.io/github/license/advaypakhale/remote.nvim)](LICENSE)
+Deploy Neovim and your config to remote development environments
 
-Deploy Neovim and your config to remote development environments.
+[![CI](https://img.shields.io/github/actions/workflow/status/advaypakhale/remote.nvim/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?style=flat-square)](https://github.com/advaypakhale/remote.nvim/releases)
+[![Neovim](https://img.shields.io/badge/Neovim-0.11%2B-57A143?style=flat-square&logo=neovim&logoColor=white)](https://neovim.io)
+[![License](https://img.shields.io/github/license/advaypakhale/remote.nvim?style=flat-square)](LICENSE)
+
+[Install](#install) &bull; [Usage](#usage) &bull; [Configuration](#configuration) &bull; [Documentation](doc/remote-nvim.txt)
+
+</div>
 
 remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
 the target, then runs Neovim there over ssh or `docker exec`. Everything stays inside that directory, so an existing
 Neovim on the target is left alone.
+
+## Features
 
 - Works over ssh or against a running Docker container
 - Installs the same Neovim version you run locally, matched to the target's OS and architecture
