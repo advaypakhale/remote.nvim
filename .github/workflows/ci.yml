@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Pinned: a dictionary update on master can fail CI without a code change.
       - uses: crate-ci/typos@v1.48.0
 
   check:
@@ -66,8 +65,6 @@ jobs:
           print("ok")
           LUA
 
-  # Single required status check, so branch protection does not need updating
-  # whenever the matrix changes.
   ci:
     name: CI
     runs-on: ubuntu-latest
