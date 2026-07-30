@@ -22,17 +22,20 @@ local function launcher(prefix, version, app_name, tool_names)
 
   table.insert(lines, "")
   table.insert(lines, ("TOOLS=%s"):format(q(layout.tools(prefix))))
+  -- Rebuilt every run, so a tool the target has gained since the last one stops
+  -- being shadowed by our symlink.
+  table.insert(lines, 'rm -rf "$TOOLS"')
   table.insert(lines, 'mkdir -p "$TOOLS"')
 
   for _, name in ipairs(tool_names) do
     local bin = q(layout.bin(prefix, name))
     table.insert(
       lines,
-      ('if ! command -v %s >/dev/null 2>&1 && [ -f %s ]; then ln -sf %s "$TOOLS/%s"; fi'):format(
+      ('if ! command -v %s >/dev/null 2>&1 && [ -f %s ]; then ln -sf %s "$TOOLS"/%s; fi'):format(
         q(name),
         bin,
         bin,
-        name
+        q(name)
       )
     )
   end
@@ -44,10 +47,10 @@ local function launcher(prefix, version, app_name, tool_names)
   return table.concat(lines, "\n") .. "\n"
 end
 
-local function local_config_dir()
-  local dir = vim.fn.stdpath("config")
+local function local_config_dir(cfg)
+  local dir = vim.fs.normalize(cfg.config_dir or vim.fn.stdpath("config"))
   if vim.fn.isdirectory(dir) == 0 then
-    error(("local config directory does not exist: %s"):format(dir), 0)
+    error(("config directory does not exist: %s"):format(dir), 0)
   end
   return dir
 end
@@ -87,7 +90,7 @@ end
 ---@return string prefix
 function M.provision(t, progress, force)
   local cfg = config.get()
-  local source = local_config_dir()
+  local source = local_config_dir(cfg)
 
   progress:step("Probing " .. t:label())
   local target = target_mod.probe(t)

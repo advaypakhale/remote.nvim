@@ -11,6 +11,9 @@ end
 local function resolve(spec, conn_opts)
   local container = spec:match("^docker:(.+)$")
   if container then
+    if conn_opts and #conn_opts > 0 then
+      vim.notify("remote.nvim: extra arguments only apply to ssh targets", vim.log.levels.WARN)
+    end
     return require("remote.transport.docker").new(container)
   end
   return require("remote.transport.ssh").new(spec, conn_opts)
@@ -80,15 +83,19 @@ function M.install(spec, conn_opts, force)
 end
 
 ---@param spec string? Prompts when omitted
-function M.cleanup(spec)
+---@param confirmed boolean? Skip the confirmation prompt
+function M.cleanup(spec, confirmed)
   if spec == nil then
-    return pick("Remove remote.nvim from:", M.cleanup)
+    return pick("Remove remote.nvim from:", function(chosen)
+      M.cleanup(chosen, confirmed)
+    end)
   end
 
   local prefix = require("remote.config").get().prefix
-  if vim.fn.confirm(("Remove %s from %s?"):format(prefix, spec), "&Yes\n&No", 2) == 1 then
-    require("remote.install").cleanup(resolve(spec))
+  if not confirmed and vim.fn.confirm(("Remove %s from %s?"):format(prefix, spec), "&Yes\n&No", 2) ~= 1 then
+    return
   end
+  require("remote.install").cleanup(resolve(spec))
 end
 
 return M

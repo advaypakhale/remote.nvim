@@ -40,7 +40,10 @@ end
 
 ---@return string command The user runs this themselves, in their own terminal
 function SSH:launch_hint(command)
-  return ("ssh -t %s %s"):format(self.host, command)
+  local argv = { "ssh", "-t" }
+  vim.list_extend(argv, self.conn_opts)
+  vim.list_extend(argv, { self.host, command })
+  return table.concat(argv, " ")
 end
 
 function SSH:label()

@@ -61,6 +61,6 @@ body:
   - type: textarea
     id: config
     attributes:
-      label: Your `vim.g.remote_nvim`
+      label: Your `setup()` call
       description: Leave blank if unset.
       render: lua

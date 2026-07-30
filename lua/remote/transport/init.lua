@@ -32,6 +32,10 @@ end
 ---Yields inside a coroutine and blocks otherwise, so the same call serves both the
 ---plugin's coroutine and a headless script.
 local function await(argv, opts)
+  if vim.fn.executable(argv[1]) == 0 then
+    error(("`%s` is not installed on your machine"):format(argv[1]), 0)
+  end
+
   local co = coroutine.running()
   if co == nil then
     return vim.system(argv, opts):wait()

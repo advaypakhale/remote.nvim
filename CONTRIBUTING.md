@@ -2,14 +2,16 @@
 
 ## Scope
 
-remote.nvim aims to stay small. It needs `ssh` and `curl` locally, and only `sh` and `tar` on the target. Changes
+remote.nvim aims to stay small. It needs `ssh`, `tar` and `curl` locally, and a POSIX shell plus the usual
+utilities on the target. Changes
 that add a required dependency, assume something about the target, or add support for a specific plugin manager are
 unlikely to be accepted.
 
 ## Architecture
 
 Each transport provides `argv(script)`, returning an argument vector that runs a POSIX `sh` script on the target;
-`ssh` and `docker exec` both do this. To add a transport, implement `argv`, `label` and optionally `connect`.
+`ssh` and `docker exec` both do this. To add a transport, implement `argv`, `label` and `launch_hint`;
+`connect` has a default.
 `:help remote-nvim-layout` describes what is installed on the target.
 
 ## Development

@@ -18,8 +18,8 @@ CONTENTS                                                *remote-nvim-contents*
 remote.nvim installs a Neovim binary, your config, and any tools you declare into
 a single directory under `$HOME` on a remote machine or container.
 
-Everything is written inside that one directory, with all four XDG directories
-redirected into it, so an existing Neovim on the target is left alone.
+Its config, data, state and cache directories are all redirected into that one
+directory, so an existing Neovim on the target keeps its own.
 
 Starting Neovim on the target is left to you. Installing prints the command to
 run; see |remote-nvim-layout|.
@@ -34,11 +34,13 @@ from the one you want.
 Local:
   - Neovim >= 0.11
   - `ssh`
+  - `tar`
   - `curl`, used when the target cannot download for itself
   - `docker`, for container targets
 
 Target:
-  - `sh` and `tar` (busybox versions work)
+  - a POSIX shell, `tar`, and the usual utilities such as `find`, `cp`, `ln`
+    and `id` (busybox versions work)
   - glibc
 
 ==============================================================================
@@ -65,6 +67,9 @@ Target:
                         Remove the install directory from {target}, after
                         confirmation.
 
+:Remote! cleanup [{target}]
+                        As above, without the confirmation prompt.
+
 Completion offers hosts from your ssh config and running containers.
 
 ==============================================================================
@@ -74,6 +79,7 @@ Configuration is optional; the defaults work without calling `setup()`. >lua
 
     require("remote").setup({
       ssh_config_path = { "~/.ssh/config" },
+      config_dir = nil,
       prefix = "~/.remote-nvim",
       app_name = "nvim",
       nvim_version = nil,
@@ -86,6 +92,11 @@ Configuration is optional; the defaults work without calling `setup()`. >lua
 ssh_config_path ~
         `string|string[]`, default `{ "~/.ssh/config" }`
         Files scanned for host names.
+
+config_dir ~
+        `string?`, default `nil`
+        Config tree to copy to the target. When unset, `stdpath("config")` is
+        used, so it follows `NVIM_APPNAME` locally.
 
 prefix ~
         `string`, default `"~/.remote-nvim"`
@@ -186,7 +197,7 @@ Everything lives under `prefix`, `~/.remote-nvim` by default: >
       config/{app_name}/    your config
       data/  state/  cache/ XDG directories
       rnvim                 launcher that sets the environment and runs Neovim
-      manifest              installed versions
+      manifest              installed versions and target platform
 <
 The config directory is replaced on every run, so files deleted locally also
 disappear on the target. Plugins live in `data/`, so this does not trigger a

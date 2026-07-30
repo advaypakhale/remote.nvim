@@ -14,8 +14,8 @@ Deploy Neovim and your config to remote development environments
 </div>
 
 remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
-the target. Everything stays inside that directory, so an existing Neovim on the target is left alone. You start
-Neovim on the target yourself, whenever you want it.
+the target. Its config, data, state and cache directories all live in there, so an existing Neovim on the target keeps
+its own. You start Neovim on the target yourself, whenever you want it.
 
 ## Features
 
@@ -27,7 +27,8 @@ Neovim on the target yourself, whenever you want it.
 
 ## Requirements
 
-Neovim 0.11+, `ssh` and `curl` locally. `sh` and `tar` on the target. `docker` for container targets.
+Neovim 0.11+, `ssh`, `tar` and `curl` locally. A POSIX shell and the usual utilities on the target,
+including `tar` (busybox is fine). `docker` for container targets.
 
 ## Install
 
@@ -53,6 +54,7 @@ require("remote").setup({})
 :Remote install box -p 2222          " extra arguments go to ssh
 :Remote! install myserver            " reinstall binaries
 :Remote cleanup myserver             " remove the install directory
+:Remote! cleanup myserver            " remove it without confirming
 ```
 
 Completion offers hosts from your ssh config and running containers.
@@ -73,6 +75,7 @@ All options are optional. Defaults shown:
 ```lua
 require("remote").setup({
   ssh_config_path = { "~/.ssh/config" },  -- files scanned for host names
+  config_dir = nil,                       -- nil uses stdpath("config")
   prefix = "~/.remote-nvim",              -- install directory on the target
   app_name = "nvim",                      -- NVIM_APPNAME on the target
   nvim_version = nil,                     -- nil matches your local Neovim

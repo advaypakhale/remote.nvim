@@ -12,8 +12,8 @@ local subcommands = {
   install = function(args, opts)
     require("remote").install(args[1], vim.list_slice(args, 2), opts.bang)
   end,
-  cleanup = function(args)
-    require("remote").cleanup(args[1])
+  cleanup = function(args, opts)
+    require("remote").cleanup(args[1], opts.bang)
   end,
 }
 
@@ -21,7 +21,10 @@ vim.api.nvim_create_user_command("Remote", function(opts)
   local name = opts.fargs[1] or "install"
   local impl = subcommands[name]
   if impl == nil then
-    vim.notify(("remote.nvim: unknown subcommand '%s'"):format(name), vim.log.levels.ERROR)
+    vim.notify(
+      ("remote.nvim: unknown subcommand '%s', see :help remote-nvim-commands"):format(name),
+      vim.log.levels.ERROR
+    )
     return
   end
   impl(vim.list_slice(opts.fargs, 2), opts)
