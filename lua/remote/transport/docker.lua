@@ -13,10 +13,13 @@ function M.new(container)
   return setmetatable({ container = container }, Docker)
 end
 
----@param opts? { tty?: boolean }
-function Docker:argv(script, opts)
-  local flags = opts and opts.tty and "-it" or "-i"
-  return { "docker", "exec", flags, self.container, "/bin/sh", "-c", script }
+function Docker:argv(script)
+  return { "docker", "exec", "-i", self.container, "/bin/sh", "-c", script }
+end
+
+---@return string command The user runs this themselves, in their own terminal
+function Docker:launch_hint(command)
+  return ("docker exec -it %s %s"):format(self.container, command)
 end
 
 function Docker:label()

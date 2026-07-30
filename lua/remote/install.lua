@@ -174,8 +174,9 @@ function M.run(t, force)
       return
     end
 
-    progress:close()
-    ui.terminal(t:argv(q(layout.launcher(result)), { tty = true }), t:label())
+    progress:info("")
+    progress:info("Start Neovim on " .. t:label() .. " with:")
+    progress:info("  " .. t:launch_hint(q(layout.launcher(result))))
   end)
 end
 

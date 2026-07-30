@@ -14,12 +14,12 @@ Deploy Neovim and your config to remote development environments
 </div>
 
 remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
-the target, then runs Neovim there over ssh or `docker exec`. Everything stays inside that directory, so an existing
-Neovim on the target is left alone.
+the target. Everything stays inside that directory, so an existing Neovim on the target is left alone. You start
+Neovim on the target yourself, whenever you want it.
 
 ## Features
 
-- Works over ssh or against a running Docker container
+- Installs to any host you can `ssh` to, or any running Docker container
 - Installs the same Neovim version you run locally, matched to the target's OS and architecture
 - Re-run it to push config changes; binaries are only downloaded when the version changes
 - Installs extra binaries, such as `ripgrep` or `fd`, if you ask it to
@@ -47,17 +47,24 @@ require("remote").setup({})
 ## Usage
 
 ```vim
-:Remote                              " pick a target, then connect
-:Remote connect myserver             " ssh host
-:Remote connect docker:mycontainer   " running container
-:Remote connect box -p 2222          " extra arguments go to ssh
-:Remote! connect myserver            " reinstall binaries
+:Remote                              " pick a target from a list
+:Remote install myserver             " ssh host
+:Remote install docker:mycontainer   " running container
+:Remote install box -p 2222          " extra arguments go to ssh
+:Remote! install myserver            " reinstall binaries
 :Remote cleanup myserver             " remove the install directory
 ```
 
 Completion offers hosts from your ssh config and running containers.
 
-Re-run `:Remote connect` after changing your config to push it again.
+Installing prints the command to start Neovim on the target. Run that in your own terminal:
+
+```sh
+ssh -t myserver ~/.remote-nvim/rnvim
+docker exec -it mycontainer ~/.remote-nvim/rnvim
+```
+
+Re-run `:Remote install` after changing your config to push it again.
 
 ## Configuration
 

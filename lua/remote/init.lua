@@ -70,10 +70,10 @@ end
 ---@param spec string? Prompts when omitted
 ---@param conn_opts string[]?
 ---@param force boolean? Reinstall binaries even if the manifest matches
-function M.connect(spec, conn_opts, force)
+function M.install(spec, conn_opts, force)
   if spec == nil then
-    return pick("Connect to:", function(chosen)
-      M.connect(chosen, conn_opts, force)
+    return pick("Install Neovim on:", function(chosen)
+      M.install(chosen, conn_opts, force)
     end)
   end
   require("remote.install").run(resolve(spec, conn_opts), force)

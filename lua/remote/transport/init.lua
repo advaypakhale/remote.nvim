@@ -1,10 +1,11 @@
 ---A transport runs a POSIX `sh` script on the target.
 ---@class remote.Transport
----@field argv fun(self, script: string, opts?: { tty?: boolean }): string[]
+---@field argv fun(self, script: string): string[]
 ---@field label fun(self): string
 ---@field connect fun(self, authenticate: remote.Authenticate): boolean
+---@field launch_hint fun(self, command: string): string
 
----Shows argv in a terminal and returns its exit code. Transports that need a TTY to
+---Runs argv in a terminal and returns its exit code. Transports that need a TTY to
 ---authenticate call this; the rest ignore it.
 ---@alias remote.Authenticate fun(argv: string[], title: string): integer?
 

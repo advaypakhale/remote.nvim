@@ -25,7 +25,7 @@ There is no test suite, so verify against a real target. A container is easiest:
 
 ```sh
 docker run -d --name rnvim-dev --platform linux/amd64 debian:bookworm-slim sleep infinity
-nvim -c 'Remote connect docker:rnvim-dev'
+nvim -c 'Remote install docker:rnvim-dev'
 docker rm -f rnvim-dev
 ```
 
