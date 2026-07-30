@@ -67,9 +67,6 @@ Target:
                         Remove the install directory from {target}, after
                         confirmation.
 
-:Remote! cleanup [{target}]
-                        As above, without the confirmation prompt.
-
 Completion offers hosts from your ssh config and running containers.
 
 ==============================================================================

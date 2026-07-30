@@ -54,7 +54,6 @@ require("remote").setup({})
 :Remote install box -p 2222          " extra arguments go to ssh
 :Remote! install myserver            " reinstall binaries
 :Remote cleanup myserver             " remove the install directory
-:Remote! cleanup myserver            " remove it without confirming
 ```
 
 Completion offers hosts from your ssh config and running containers.

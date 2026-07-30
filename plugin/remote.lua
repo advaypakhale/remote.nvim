@@ -12,8 +12,8 @@ local subcommands = {
   install = function(args, opts)
     require("remote").install(args[1], vim.list_slice(args, 2), opts.bang)
   end,
-  cleanup = function(args, opts)
-    require("remote").cleanup(args[1], opts.bang)
+  cleanup = function(args)
+    require("remote").cleanup(args[1])
   end,
 }
 

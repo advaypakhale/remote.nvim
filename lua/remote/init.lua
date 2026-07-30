@@ -83,19 +83,15 @@ function M.install(spec, conn_opts, force)
 end
 
 ---@param spec string? Prompts when omitted
----@param confirmed boolean? Skip the confirmation prompt
-function M.cleanup(spec, confirmed)
+function M.cleanup(spec)
   if spec == nil then
-    return pick("Remove remote.nvim from:", function(chosen)
-      M.cleanup(chosen, confirmed)
-    end)
+    return pick("Remove remote.nvim from:", M.cleanup)
   end
 
   local prefix = require("remote.config").get().prefix
-  if not confirmed and vim.fn.confirm(("Remove %s from %s?"):format(prefix, spec), "&Yes\n&No", 2) ~= 1 then
-    return
+  if vim.fn.confirm(("Remove %s from %s?"):format(prefix, spec), "&Yes\n&No", 2) == 1 then
+    require("remote.install").cleanup(resolve(spec))
   end
-  require("remote.install").cleanup(resolve(spec))
 end
 
 return M
