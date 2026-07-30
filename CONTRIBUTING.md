@@ -1,8 +1,5 @@
 # Contributing
 
-Thanks for taking the time. This is a deliberately small plugin, so the bar for new code is "does it hold the
-constraints below" rather than "is it useful to someone".
-
 ## Design constraints
 
 These are the point of the project. A change that breaks one needs a very good reason.
@@ -19,38 +16,18 @@ These are the point of the project. A change that breaks one needs a very good r
 
 ## Architecture
 
-`:help remote-nvim-internals` describes how it works. The short version: every transport supplies one primitive,
-`argv(script)`, returning an argument vector that runs a POSIX `sh` script on the target. `ssh` and `docker exec`
-each supply one, so neither needs its own code path. Everything else is built on that.
+See `:help remote-nvim-internals`. Every transport supplies one primitive, `argv(script)`, returning an argument
+vector that runs a POSIX `sh` script on the target. `ssh` and `docker exec` each supply one, so neither needs its
+own code path. To add a transport, implement `argv`, `label` and optionally `connect`; nothing else should change.
 
-If you are adding a transport, implement `argv`, `label` and optionally `connect`, and nothing else should need to
-change.
-
-## Commits and pull requests
-
-Commit messages and PR titles follow [Conventional Commits](https://www.conventionalcommits.org). CI validates the
-PR title, and [release-please](https://github.com/googleapis/release-please) turns merged commits into the
-changelog and the next version, so the prefix decides the release:
-
-| Prefix                | Effect                          |
-| --------------------- | ------------------------------- |
-| `fix:`                | patch release                   |
-| `feat:`               | minor release                   |
-| `!` or `BREAKING CHANGE:` | major release               |
-| `docs:` `chore:` `ci:` `refactor:` `style:` `perf:` `test:` `build:` `revert:` | no release |
-
-Keep the subject lowercase and imperative: `fix: resolve Include globs relative to ~/.ssh`.
-
-Open a pull request against `master`. One logical change per PR.
-
-## Before you push
+## Development
 
 ```sh
-stylua lua plugin      # formatting is enforced in CI
-typos                  # spelling is enforced in CI
+stylua lua plugin      # enforced in CI
+typos                  # enforced in CI
 ```
 
-There is no automated test suite. Verify changes against a real target, which is easiest in a container:
+There is no automated test suite. Verify against a real target:
 
 ```sh
 docker run -d --name rnvim-dev --platform linux/amd64 debian:bookworm-slim sleep infinity
@@ -58,17 +35,18 @@ nvim -c 'Remote connect docker:rnvim-dev'
 docker rm -f rnvim-dev
 ```
 
-Worth exercising when you touch the relevant area, because these are the paths that break:
+These are the paths that actually break, so exercise the relevant ones:
 
-- A target with **neither `curl` nor `wget`** (`debian:bookworm-slim` is one), which forces the local-download and
-  stream fallback rather than the target downloading for itself.
-- A target with one of them installed, which takes the other path.
-- **Alpine**, which must be refused with a clear musl message rather than handed a glibc binary.
+- A target with **neither `curl` nor `wget`** (`debian:bookworm-slim`), forcing the local-download and stream
+  fallback rather than the target downloading for itself.
+- A target with one of them installed, taking the other path.
+- **Alpine**, which must be refused with a musl message rather than handed a glibc binary.
 - A **different architecture** (`--platform linux/arm64` under qemu).
 - Paths containing spaces and quotes. Every path crosses a local shell, `ssh`'s argument concatenation, and the
   remote shell, so quoting slips surface here and nowhere else.
 
-## Reporting bugs
+## Pull requests
 
-Include the output of `:checkhealth remote`, the target's `uname -sm`, and whether the target has `curl` or `wget`.
-Those three answers determine which code path ran.
+Against `main`, one logical change each. Commits follow
+[Conventional Commits](https://www.conventionalcommits.org); release-please uses them to version and generate the
+changelog.
