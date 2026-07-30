@@ -1,0 +1,74 @@
+name: Bug report
+description: Something does not work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The target's platform and whether it can download for itself determine which
+        code path ran, so those answers are usually enough to locate the problem.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. :Remote connect ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: health
+    attributes:
+      label: Output of `:checkhealth remote`
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: target
+    attributes:
+      label: Target platform
+      description: Output of `uname -sm` on the target.
+      placeholder: Linux x86_64
+    validations:
+      required: true
+
+  - type: dropdown
+    id: downloader
+    attributes:
+      label: Does the target have `curl` or `wget`?
+      description: This selects between the target downloading for itself and the local stream fallback.
+      options:
+        - "wget"
+        - "curl"
+        - "neither"
+        - "not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport
+      options:
+        - ssh
+        - docker
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Your `vim.g.remote_nvim`
+      description: Leave blank if unset.
+      render: lua

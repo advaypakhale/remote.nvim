@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest something
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This plugin is deliberately small. Requests that would add a required
+        dependency, assume something about the target, or teach the plugin about a
+        specific plugin manager are unlikely to be accepted. See
+        [CONTRIBUTING.md](../blob/master/CONTRIBUTING.md#design-constraints).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you unable to do today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including whether existing configuration already covers it.
