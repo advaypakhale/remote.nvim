@@ -1,5 +1,10 @@
 # remote.nvim
 
+[![CI](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?display_name=tag&sort=semver)](https://github.com/advaypakhale/remote.nvim/releases)
+[![Neovim](https://img.shields.io/badge/Neovim-0.11%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io)
+[![License](https://img.shields.io/github/license/advaypakhale/remote.nvim)](LICENSE)
+
 Run your local Neovim on a remote machine or container, without touching anything already installed there.
 
 ```vim
@@ -108,6 +113,11 @@ the platforms differ.
 
 `:help remote-nvim-internals` describes how it works.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Pull request titles follow
+[Conventional Commits](https://www.conventionalcommits.org), which drive the changelog and versioning.
+
 ## License
 
-MIT
+[MIT](LICENSE)
