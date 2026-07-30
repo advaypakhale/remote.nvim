@@ -1,0 +1,255 @@
+*remote-nvim.txt*        Transplant your Neovim onto a remote machine
+
+==============================================================================
+CONTENTS                                                *remote-nvim-contents*
+
+  1. Introduction ......................... |remote-nvim-introduction|
+  2. Requirements ......................... |remote-nvim-requirements|
+  3. Quickstart ........................... |remote-nvim-quickstart|
+  4. Commands ............................. |remote-nvim-commands|
+  5. Configuration ........................ |remote-nvim-configuration|
+  6. Tools ................................ |remote-nvim-tools|
+  7. Offline targets ...................... |remote-nvim-offline|
+  8. How it works ......................... |remote-nvim-internals|
+  9. Limitations .......................... |remote-nvim-limitations|
+
+==============================================================================
+1. INTRODUCTION                                     *remote-nvim-introduction*
+
+remote.nvim makes your local Neovim appear on a remote machine or container,
+without touching anything already installed there.
+
+It ships a Neovim binary, your config, and any tools you declare into a single
+directory under `$HOME` on the target, then runs Neovim there. There is no
+client/server split: no headless server, no port forwarding, and no protocol
+that can go out of sync between versions.
+
+The design constraints are deliberate:
+
+  - `ssh` locally; `sh` and `tar` on the target. Nothing else is required.
+  - Nothing on the target is assumed: no package manager, no root, no bash,
+    no particular architecture.
+  - Nothing about your config is assumed. It is an opaque tree of bytes, so
+    any plugin manager works and none is special-cased.
+  - Everything lands under one prefix, with all four XDG directories
+    redirected, so an existing Neovim on the target is never disturbed.
+
+==============================================================================
+2. REQUIREMENTS                                     *remote-nvim-requirements*
+
+Local:
+  - Neovim >= 0.11
+  - `ssh`
+  - `curl` (only when the target cannot download for itself)
+  - `docker` (only for container targets)
+
+Target:
+  - `sh` and `tar` (busybox versions are fine)
+  - glibc. See |remote-nvim-limitations| regarding musl.
+
+Run `:checkhealth remote` to verify.
+
+==============================================================================
+3. QUICKSTART                                         *remote-nvim-quickstart*
+
+No setup call is required. Install the plugin and run: >vim
+
+    :Remote
+<
+That prompts for a target from your ssh config and any running containers,
+provisions it, and drops you into Neovim on the far side.
+
+To skip the prompt: >vim
+
+    :Remote connect myserver
+<
+==============================================================================
+4. COMMANDS                                             *remote-nvim-commands*
+
+                                                                     *:Remote*
+:Remote                 Prompt for a target and connect.
+
+:Remote connect [{target}] [{ssh-args}...]
+                        Provision {target} and launch Neovim on it. Prompts
+                        when {target} is omitted. Any further arguments are
+                        passed through to `ssh`, for example: >vim
+
+                            :Remote connect box -p 2222 -i ~/.ssh/key
+<
+                        {target} is an ssh host, or `docker:{container}` for a
+                        running container.
+
+                        The operation is idempotent. Re-run it to push config
+                        changes; binaries are only fetched when the version
+                        recorded on the target differs.
+
+:Remote! connect [{target}]
+                        As above, but reinstall binaries even when the target
+                        already records the right versions.
+
+:Remote cleanup [{target}]
+                        Remove the install prefix from {target} after
+                        confirmation. Prompts when {target} is omitted.
+
+==============================================================================
+5. CONFIGURATION                                   *remote-nvim-configuration*
+
+Configuration is optional. Set `vim.g.remote_nvim` to a table, or to a
+function returning one: >lua
+
+    vim.g.remote_nvim = {
+      prefix = "~/.remote-nvim",
+      exclude = { ".git" },
+    }
+<
+Equivalently, call `require("remote").setup({...})`, which takes precedence
+over `vim.g.remote_nvim`.
+
+                                                  *remote-nvim-config-options*
+ssh_config_path ~
+        `string|string[]`, default `{ "~/.ssh/config" }`
+        Files scanned for host names. `Include` is followed, with globs.
+
+prefix ~
+        `string`, default `"~/.remote-nvim"`
+        Install root on the target. A leading `~` resolves against the
+        target's `$HOME`.
+
+app_name ~
+        `string`, default `"nvim"`
+        `NVIM_APPNAME` on the target.
+
+nvim_version ~
+        `string?`, default `nil`
+        Which Neovim release to install. When unset, the local Neovim's
+        version is used, so the target matches your machine. Development
+        builds have no matching release, so those fall back to `"stable"`.
+
+exclude ~
+        `string[]`, default `{ ".git" }`
+        Patterns excluded from the config tree, passed to `tar --exclude`.
+        The default is a transfer optimisation: excluding `.git` cannot
+        change how Neovim behaves, and config repositories are often far
+        larger than the config itself. Set to `{}` to copy everything.
+
+copy_dirs ~
+        `table<"data"|"state"|"cache", string[]>`, default `{}`
+        Extra directories to copy. See |remote-nvim-offline|.
+
+tools ~
+        `table<string, remote.Tool>`, default `{}`
+        Extra binaries to ship. See |remote-nvim-tools|.
+
+==============================================================================
+6. TOOLS                                                   *remote-nvim-tools*
+
+Nothing but Neovim and your config is shipped by default. Declare anything
+else you want on the target: >lua
+
+    vim.g.remote_nvim = {
+      tools = {
+        rg = {
+          version = "14.1.1",
+          bin = "rg",
+          url = function(os, arch)
+            return ("https://github.com/BurntSushi/ripgrep/releases/download"
+              .. "/14.1.1/ripgrep-14.1.1-%s-unknown-%s-musl.tar.gz")
+              :format(arch, os)
+          end,
+        },
+      },
+    }
+<
+Each entry takes:
+
+  url      `fun(os: string, arch: string): string`
+           Called with the target's platform, using Neovim's release naming:
+           `os` is `"linux"` or `"macos"`, `arch` is `"x86_64"` or `"arm64"`.
+           Taking the platform as arguments is what keeps a declared tool
+           correct on every target.
+
+  bin      `string?`
+           Basename to locate inside the archive. Defaults to the entry name.
+           Ignored when the URL does not end in `.tar.gz` or `.tgz`, in which
+           case the download is treated as the binary itself.
+
+  version  `string?`
+           Recorded on the target to decide whether a reinstall is needed.
+           Defaults to the resolved URL, so changing the URL reinstalls.
+
+Tools are symlinked into the target's `PATH` only when the target does not
+already provide them, so system installations are never shadowed.
+
+==============================================================================
+7. OFFLINE TARGETS                                       *remote-nvim-offline*
+
+Neovim and declared tools are downloaded by the target when it has `wget` or
+`curl`, and otherwise downloaded locally and streamed over the existing
+connection. An air-gapped target therefore needs no special configuration.
+
+Your plugins are a different matter: every plugin manager fetches them with
+`git`, which needs network access on the target. When the target has none,
+copy the already-resolved plugins across instead: >lua
+
+    vim.g.remote_nvim = {
+      copy_dirs = { data = { "lazy" } },
+    }
+<
+That copies `stdpath("data")/lazy` into the target's data directory. The key
+names a Neovim directory (`data`, `state` or `cache`); the values are
+subdirectories within it. remote.nvim does not know or care what `lazy` is.
+
+Note that a copied data directory may contain compiled artifacts, such as
+treesitter parsers and Mason-installed servers, which are built for your
+platform. Copying those to a target with a different `uname -s`/`uname -m`
+produces binaries that cannot run; a warning is shown when the platforms
+differ.
+
+==============================================================================
+8. HOW IT WORKS                                        *remote-nvim-internals*
+
+Every transport provides one primitive: an argument vector that runs a POSIX
+`sh` script on the target. `ssh` and `docker exec` each supply one, which is
+why both are supported without any separate code path.
+
+Copying a directory means creating a `tar` archive locally, streaming it into
+the target over that primitive, and extracting it there. Only `sh` and `tar`
+are needed on the far side. Files are replaced wholesale rather than synced,
+so anything deleted locally also disappears on the target. This is safe
+because plugins live in the data directory, not the config directory, so
+replacing the config never triggers a plugin reinstall.
+
+On connect, remote.nvim opens a single multiplexed ssh master connection. If
+authentication needs a terminal, one is shown and you type into it; every
+subsequent command rides the existing connection, needing neither a TTY nor
+another authentication round.
+
+The target's platform is probed once, and installed versions are recorded in
+a manifest at `{prefix}/manifest`. That manifest is what makes the operation
+idempotent, and what makes a version change reinstall automatically.
+
+Neovim is installed to `{prefix}/nvim/{version}`, keyed by version so that
+switching versions cannot leave a half-matched install. A generated `sh`
+launcher at `{prefix}/rnvim` redirects all four XDG directories into the
+prefix and execs that binary.
+
+==============================================================================
+9. LIMITATIONS                                       *remote-nvim-limitations*
+
+musl targets ~
+        Neovim publishes no musl build, so Alpine and other musl systems are
+        refused with a clear message rather than being handed a glibc binary
+        that fails to load.
+
+Windows as the local machine ~
+        Unsupported. The local side needs a POSIX shell, and Windows OpenSSH
+        does not implement connection multiplexing.
+
+devcontainer.json ~
+        Out of scope. Attaching to an already-running container is supported;
+        building images, Features and lifecycle hooks are not.
+
+Cross-platform `copy_dirs` ~
+        Warned about, not prevented. See |remote-nvim-offline|.
+
+vim:tw=78:ts=8:noet:ft=help:norl:

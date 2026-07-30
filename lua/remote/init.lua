@@ -1,100 +1,94 @@
--- Main module for remote.nvim
-
 local M = {}
 
-local config = require("remote.config")
-local ssh = require("remote.ssh")
-local ui = require("remote.ui")
-
----Setup function to configure the plugin
----@param opts table|nil User configuration options
+---Optional; `vim.g.remote_nvim` is equivalent.
+---@param opts remote.Config?
 function M.setup(opts)
-  config.setup(opts)
+  require("remote.config").setup(opts)
 end
 
----Execute remote command with given action and arguments
----@param action string Command action (setup, sync, cleanup)
----@param args string Raw argument string
-local function execute_remote_command(action, args)
-  local script_path = config.get_script_path()
+---@param spec string An ssh host, or `docker:<container>`
+---@param conn_opts string[]? Passed through to `ssh`
+---@return remote.Transport
+local function resolve(spec, conn_opts)
+  local container = spec:match("^docker:(.+)$")
+  if container then
+    return require("remote.transport.docker").new(container)
+  end
+  return require("remote.transport.ssh").new(spec, conn_opts)
+end
 
-  -- Check if script exists
-  if vim.fn.filereadable(script_path) == 0 then
-    vim.notify("remote-nvim.sh script not found at: " .. script_path, vim.log.levels.ERROR)
+local cache = { specs = nil, labels = nil, at = 0 }
+
+---Scanning the ssh config and listing containers is too slow to repeat per
+---keystroke, and completion is called on every one.
+local function discover()
+  local now = vim.uv.now()
+  if cache.specs and now - cache.at < 2000 then
+    return cache.specs, cache.labels
+  end
+
+  local ssh_config = require("remote.ssh_config")
+  local specs, labels = {}, {}
+
+  for _, host in ipairs(ssh_config.hosts(require("remote.config").get().ssh_config_path)) do
+    table.insert(specs, host.host)
+    labels[host.host] = ssh_config.format(host)
+  end
+  for _, container in ipairs(require("remote.transport.docker").containers()) do
+    local spec = "docker:" .. container
+    table.insert(specs, spec)
+    labels[spec] = spec
+  end
+
+  cache = { specs = specs, labels = labels, at = now }
+  return specs, labels
+end
+
+---@return string[] specs Completion candidates
+function M.targets()
+  return (discover())
+end
+
+local function pick(prompt, fn)
+  local specs, labels = discover()
+  if #specs == 0 then
+    vim.notify("remote.nvim: no hosts in ssh config and no running containers", vim.log.levels.WARN)
     return
   end
 
-  local command = string.format("%s %s %s", script_path, action, args)
-  ui.run_in_float(command)
-end
-
----Show host picker and execute action
----@param action string Command action (setup, sync, cleanup)
-local function pick_and_execute(action)
-  -- Ensure config is initialized
-  if not config.options.ssh_config_path then
-    config.setup()
-  end
-
-  -- Parse SSH config
-  local hosts = ssh.parse_ssh_config(config.options.ssh_config_path)
-
-  if #hosts == 0 then
-    vim.notify("No hosts found in SSH config", vim.log.levels.WARN)
-    return
-  end
-
-  -- Prepare picker items
-  local items = {}
-  local host_map = {}
-
-  for _, host in ipairs(hosts) do
-    local display = ssh.format_host_for_display(host)
-    table.insert(items, display)
-    host_map[display] = host.host
-  end
-
-  -- Show picker
-  vim.ui.select(items, {
-    prompt = string.format("Select host for %s:", action),
-    format_item = function(item)
-      return item
+  vim.ui.select(specs, {
+    prompt = prompt,
+    format_item = function(spec)
+      return labels[spec]
     end,
   }, function(choice)
     if choice then
-      local hostname = host_map[choice]
-      execute_remote_command(action, hostname)
+      fn(choice)
     end
   end)
 end
 
----Handle RemoteSetup command
----@param args string Command arguments
-function M.setup_command(args)
-  if args == "" then
-    pick_and_execute("setup")
-  else
-    execute_remote_command("setup", args)
+---@param spec string? Prompts when omitted
+---@param conn_opts string[]?
+---@param force boolean? Reinstall binaries even if the manifest matches
+function M.connect(spec, conn_opts, force)
+  if spec == nil then
+    return pick("Connect to:", function(chosen)
+      M.connect(chosen, conn_opts, force)
+    end)
   end
+  require("remote.install").run(resolve(spec, conn_opts), force)
 end
 
----Handle RemoteSync command
----@param args string Command arguments
-function M.sync_command(args)
-  if args == "" then
-    pick_and_execute("sync")
-  else
-    execute_remote_command("sync", args)
+---@param spec string? Prompts when omitted
+function M.cleanup(spec)
+  if spec == nil then
+    return pick("Remove remote.nvim from:", M.cleanup)
   end
-end
 
----Handle RemoteCleanup command
----@param args string Command arguments
-function M.cleanup_command(args)
-  if args == "" then
-    pick_and_execute("cleanup")
-  else
-    execute_remote_command("cleanup", args)
+  local prefix = require("remote.config").get().prefix
+  if vim.fn.confirm(("Remove %s from %s?"):format(prefix, spec), "&Yes\n&No", 2) == 1 then
+    require("remote.install").cleanup(resolve(spec))
   end
 end
 

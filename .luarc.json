@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.1",
+  "workspace.library": ["$VIMRUNTIME/lua", "${3rd}/luv/library"],
+  "workspace.checkThirdParty": false,
+  "diagnostics.globals": ["vim"],
+  "diagnostics.disable": ["duplicate-set-field"],
+  "format.enable": false
+}

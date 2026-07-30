@@ -1,31 +1,98 @@
--- Configuration module for remote.nvim
+---@class remote.Config
+---@field ssh_config_path? string|string[]
+---@field prefix? string Install root on the target
+---@field app_name? string NVIM_APPNAME on the target
+---@field nvim_version? string Defaults to the local Neovim's version
+---@field exclude? string[] Patterns excluded from the config tree
+---@field copy_dirs? table<"data"|"state"|"cache", string[]>
+---@field tools? table<string, remote.Tool>
+
+---@type remote.Config|fun():remote.Config|nil
+vim.g.remote_nvim = vim.g.remote_nvim
 
 local M = {}
 
--- Default configuration
-M.defaults = {
-    ssh_config_path = "~/.ssh/config",
+---@type remote.Config
+local defaults = {
+  ssh_config_path = { "~/.ssh/config" },
+  prefix = "~/.remote-nvim",
+  app_name = "nvim",
+  exclude = { ".git" },
+  copy_dirs = {},
+  tools = {},
 }
 
--- Current configuration
-M.options = {}
+---The single source of truth for what options exist and what they accept.
+local OPTIONS = {
+  ssh_config_path = { types = { "string", "table" } },
+  prefix = { types = "string" },
+  app_name = { types = "string" },
+  nvim_version = { types = "string", optional = true },
+  exclude = { types = "table" },
+  copy_dirs = { types = "table" },
+  tools = { types = "table" },
+}
 
--- Setup function
----@param opts table|nil User configuration
+local COPY_DIR_KINDS = { "data", "state", "cache" }
+
+---@type remote.Config?
+local override
+
+---@param opts remote.Config?
 function M.setup(opts)
-    M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
-
-    -- Normalize ssh_config_path to always be a table
-    if type(M.options.ssh_config_path) == "string" then
-        M.options.ssh_config_path = { M.options.ssh_config_path }
-    end
+  override = opts
 end
 
--- Get script path (always in plugin directory)
-function M.get_script_path()
-    local plugin_dir =
-        vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
-    return vim.fn.fnamemodify(plugin_dir .. "/scripts/remote-nvim.sh", ":p")
+local function validate(cfg)
+  for key, value in pairs(cfg) do
+    local option = OPTIONS[key]
+    if option == nil then
+      error(("remote.nvim: unknown option '%s'"):format(key), 0)
+    end
+    vim.validate(key, value, option.types, option.optional)
+  end
+
+  for name, spec in pairs(cfg.tools) do
+    vim.validate("tools." .. name, spec, "table")
+    vim.validate(("tools.%s.url"):format(name), spec.url, "callable")
+    vim.validate(("tools.%s.bin"):format(name), spec.bin, "string", true)
+    vim.validate(("tools.%s.version"):format(name), spec.version, "string", true)
+  end
+
+  for kind, dirs in pairs(cfg.copy_dirs) do
+    if not vim.tbl_contains(COPY_DIR_KINDS, kind) then
+      error(("remote.nvim: copy_dirs key must be data, state or cache (got '%s')"):format(kind), 0)
+    end
+    vim.validate("copy_dirs." .. kind, dirs, "table")
+  end
+end
+
+---Resolved on every call so `vim.g.remote_nvim` stays live.
+---@return remote.Config
+function M.get()
+  local g = vim.g.remote_nvim
+  if type(g) == "function" then
+    g = g()
+  end
+
+  local cfg = vim.tbl_extend("force", vim.deepcopy(defaults), g or {}, override or {})
+  validate(cfg)
+
+  if type(cfg.ssh_config_path) == "string" then
+    cfg.ssh_config_path = { cfg.ssh_config_path }
+  end
+  return cfg
+end
+
+---@param home string Target's `$HOME`, resolving a leading `~`
+---@return string
+function M.prefix(home)
+  local prefix = M.get().prefix
+  local rest = prefix:match("^~/?(.*)$")
+  if rest == nil then
+    return prefix
+  end
+  return rest == "" and home or (home .. "/" .. rest)
 end
 
 return M
