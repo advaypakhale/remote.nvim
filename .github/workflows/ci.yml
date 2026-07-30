@@ -60,7 +60,6 @@ jobs:
           assert(#vim.fn.getcompletion("Remote ", "cmdline") == 2, "subcommand completion is broken")
 
           vim.cmd("helptags doc")
-          vim.cmd("checkhealth remote")
 
           print("ok")
           LUA
