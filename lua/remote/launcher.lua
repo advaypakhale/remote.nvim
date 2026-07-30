@@ -20,8 +20,12 @@ return function(prefix, version, app_name, tool_names)
     local bin = q(layout.bin(prefix, name))
     table.insert(
       lines,
-      ('if ! command -v %s >/dev/null 2>&1 && [ -f %s ]; then ln -sf %s "$TOOLS/%s"; fi')
-        :format(q(name), bin, bin, name)
+      ('if ! command -v %s >/dev/null 2>&1 && [ -f %s ]; then ln -sf %s "$TOOLS/%s"; fi'):format(
+        q(name),
+        bin,
+        bin,
+        name
+      )
     )
   end
   table.insert(lines, 'export PATH="$TOOLS:$PATH"')

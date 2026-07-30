@@ -86,8 +86,7 @@ end
 ---@param target remote.Target
 function M.install_nvim(t, target, prefix, version)
   local os_name, arch = M.platform(target)
-  local url = ("https://github.com/neovim/neovim/releases/download/%s/nvim-%s-%s.tar.gz")
-    :format(version, os_name, arch)
+  local url = ("https://github.com/neovim/neovim/releases/download/%s/nvim-%s-%s.tar.gz"):format(version, os_name, arch)
   local dest = q(layout.nvim(prefix, version))
 
   unpack(t, target, url, {

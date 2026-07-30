@@ -15,8 +15,7 @@ local is_macos = vim.uv.os_uname().sysname == "Darwin"
 
 ---`pipefail` is what surfaces a producer's failure; plain `sh` reports only the
 ---consumer's status.
-local PIPELINE_SHELL = vim.fn.executable("bash") == 1 and { "bash", "-o", "pipefail", "-c" }
-  or { "sh", "-c" }
+local PIPELINE_SHELL = vim.fn.executable("bash") == 1 and { "bash", "-o", "pipefail", "-c" } or { "sh", "-c" }
 
 ---@param s string
 ---@return string POSIX single-quoted
