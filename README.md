@@ -5,16 +5,16 @@
 [![Neovim](https://img.shields.io/badge/Neovim-0.11%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io)
 [![License](https://img.shields.io/github/license/advaypakhale/remote.nvim)](LICENSE)
 
-Run your local Neovim on a remote machine or container.
+Deploy Neovim and your config to remote development environments.
 
-remote.nvim copies a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
+remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
 the target, then runs Neovim there over ssh or `docker exec`. Everything stays inside that directory, so an existing
 Neovim on the target is left alone.
 
 - Works over ssh or against a running Docker container
 - Installs the same Neovim version you run locally, matched to the target's OS and architecture
 - Re-run it to push config changes; binaries are only downloaded when the version changes
-- Ships extra binaries, such as `ripgrep` or `fd`, if you ask it to
+- Installs extra binaries, such as `ripgrep` or `fd`, if you ask it to
 - No plugin dependencies
 
 ## Requirements
@@ -35,8 +35,6 @@ With `vim.pack`:
 vim.pack.add({ "https://github.com/advaypakhale/remote.nvim" })
 require("remote").setup({})
 ```
-
-Then run `:checkhealth remote`.
 
 ## Usage
 

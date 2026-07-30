@@ -1,4 +1,4 @@
-*remote-nvim.txt*        Run your local Neovim on a remote machine
+*remote-nvim.txt*        Deploy Neovim to remote development environments
 
 ==============================================================================
 CONTENTS                                                *remote-nvim-contents*
@@ -15,7 +15,7 @@ CONTENTS                                                *remote-nvim-contents*
 ==============================================================================
 1. INTRODUCTION                                     *remote-nvim-introduction*
 
-remote.nvim copies a Neovim binary, your config, and any tools you declare into
+remote.nvim installs a Neovim binary, your config, and any tools you declare into
 a single directory under `$HOME` on a remote machine or container, then runs
 Neovim there over ssh or `docker exec`.
 
@@ -38,8 +38,6 @@ Local:
 Target:
   - `sh` and `tar` (busybox versions work)
   - glibc
-
-Run `:checkhealth remote` to check the local side.
 
 ==============================================================================
 3. COMMANDS                                             *remote-nvim-commands*
