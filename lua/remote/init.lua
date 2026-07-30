@@ -1,6 +1,5 @@
 local M = {}
 
----Optional; `vim.g.remote_nvim` is equivalent.
 ---@param opts remote.Config?
 function M.setup(opts)
   require("remote.config").setup(opts)

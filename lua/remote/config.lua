@@ -7,9 +7,6 @@
 ---@field copy_dirs? table<"data"|"state"|"cache", string[]>
 ---@field tools? table<string, remote.Tool>
 
----@type remote.Config|fun():remote.Config|nil
-vim.g.remote_nvim = vim.g.remote_nvim
-
 local M = {}
 
 ---@type remote.Config
@@ -67,15 +64,9 @@ local function validate(cfg)
   end
 end
 
----Resolved on every call so `vim.g.remote_nvim` stays live.
 ---@return remote.Config
 function M.get()
-  local g = vim.g.remote_nvim
-  if type(g) == "function" then
-    g = g()
-  end
-
-  local cfg = vim.tbl_extend("force", vim.deepcopy(defaults), g or {}, override or {})
+  local cfg = vim.tbl_extend("force", vim.deepcopy(defaults), override or {})
   validate(cfg)
 
   if type(cfg.ssh_config_path) == "string" then
