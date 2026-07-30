@@ -1,5 +1,4 @@
----Transports expose one primitive: argv that runs a POSIX `sh` script on the target.
----Everything else here is built on top of it.
+---A transport runs a POSIX `sh` script on the target.
 ---@class remote.Transport
 ---@field argv fun(self, script: string, opts?: { tty?: boolean }): string[]
 ---@field label fun(self): string

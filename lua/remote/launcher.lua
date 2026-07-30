@@ -1,7 +1,7 @@
 local layout = require("remote.layout")
 local q = require("remote.transport").quote
 
----Generates the target-side launcher. POSIX `sh`, since Alpine and busybox have no bash.
+---Generates the target-side launcher. POSIX `sh`, which the target may not have bash for.
 ---@param tool_names string[]
 ---@return string
 return function(prefix, version, app_name, tool_names)

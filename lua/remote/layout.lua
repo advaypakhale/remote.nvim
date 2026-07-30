@@ -1,5 +1,4 @@
----Every path the plugin creates on a target, in one place. Nothing outside the
----prefix is ever written.
+---Paths under the install prefix on the target.
 local M = {}
 
 M.XDG = { "config", "data", "state", "cache" }
