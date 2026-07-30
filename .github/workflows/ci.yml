@@ -26,7 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: crate-ci/typos@master
+      # Pinned: a dictionary update on master can fail CI without a code change.
+      - uses: crate-ci/typos@v1.48.0
 
   check:
     name: Neovim ${{ matrix.neovim }} on ${{ matrix.os }}
