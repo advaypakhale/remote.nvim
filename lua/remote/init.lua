@@ -1,16 +1,12 @@
--- remote.nvim — install Neovim, your config, and the tools you declare into
--- one directory on an ssh host or a running container, without disturbing
--- anything the target already has.
+-- remote.nvim — installs Neovim, your config, and declared tools into one
+-- directory on an ssh host or a running container.
 --
--- Everything serves one operation: provisioning. A transport runs POSIX `sh`
--- scripts on a target. Provisioning probes the target, diffs the desired
--- Neovim and tool versions against a manifest left by the previous run,
--- streams whatever is missing over the connection, and installs a launcher
--- script that pins Neovim's environment to the install prefix.
+-- A transport runs POSIX `sh` scripts on a target. Provisioning probes the
+-- target, diffs desired versions against the manifest from the previous run,
+-- streams what is missing over the connection, and installs a launcher that
+-- pins Neovim's environment to the install prefix.
 --
--- The file builds bottom-up — processes, transports, the pipeline, and last
--- the public API — so it can be read top to bottom. The ssh config parser
--- lives in `remote/ssh_config.lua`; target discovery is its only caller.
+-- The ssh config parser is in `remote/ssh_config.lua`.
 
 local ssh_config = require("remote.ssh_config")
 
@@ -28,7 +24,6 @@ local M = {}
 ---@field copy_dirs? table<"data"|"state"|"cache", string[]>
 ---@field tools? table<string, remote.Tool>
 
----Every option: what it accepts, and its value when the user sets nothing.
 local OPTIONS = {
   ssh_config_path = { types = { "string", "table" }, default = { "~/.ssh/config" } },
   config_dir = { types = "string" },
@@ -43,8 +38,6 @@ local OPTIONS = {
 ---@type remote.Config?
 local override
 
----Validated on every read rather than in `setup()`, so a bad config errors at
----the command that uses it instead of at startup.
 ---@return remote.Config
 local function config()
   local cfg = {}
@@ -102,8 +95,8 @@ local function join(argv)
   return table.concat(vim.tbl_map(quote, argv), " ")
 end
 
----Yields inside a coroutine and blocks otherwise, so the same call serves the
----plugin's coroutine and plain contexts such as completion.
+---Yields inside a coroutine and blocks otherwise, so the same call serves both
+---the plugin's coroutine and a headless script.
 local function await(argv, opts)
   if vim.fn.executable(argv[1]) == 0 then
     error(("`%s` is not installed on your machine"):format(argv[1]), 0)
@@ -175,10 +168,9 @@ end
 ---the consumer's status.
 local PIPELINE_SHELL = vim.fn.executable("bash") == 1 and { "bash", "-o", "pipefail", "-c" } or { "sh", "-c" }
 
----Streams a local command's stdout into a script on the target, so a large
----payload never sits in memory.
+---Streams, so a large payload never sits in memory.
 ---@param t remote.Transport
----@param producer string[]
+---@param producer string[] Local command whose stdout feeds the target
 local function pipe(t, producer, script, what)
   local command = join(producer) .. " | " .. join(t.argv(script))
   local r = result(await(vim.list_extend(vim.list_slice(PIPELINE_SHELL), { command }), { text = true }))
@@ -187,7 +179,7 @@ local function pipe(t, producer, script, what)
   end
 end
 
----Replace directory `dst` on the target with the contents of local `src`.
+---Replace `dst` on the target with the contents of `src`.
 ---The remote `tar` uses no GNU-only options because it may be busybox.
 ---@param t remote.Transport
 ---@param opts? { exclude?: string[] }
@@ -256,8 +248,6 @@ local function ssh_transport(host, conn_opts)
     return vim.list_extend(base("auto"), { host, "/bin/sh -c " .. quote(script) })
   end
 
-  ---Reuse a live master, silently start one under existing credentials, and
-  ---only then fall back to interactive authentication.
   function t.connect(authenticate)
     local alive = vim.list_extend(base("auto"), { "-O", "check", host })
     if local_exec(alive).code == 0 or local_exec(master_argv(false)).code == 0 then
@@ -361,8 +351,7 @@ local function probe(t)
   }
 end
 
----What an earlier run installed, one `key=value` per line. Absent on a fresh
----target, which reads as everything-missing.
+---What an earlier run installed, one `key=value` per line.
 ---@param t remote.Transport
 ---@return table<string, string>
 local function read_manifest(t, prefix)
@@ -410,9 +399,8 @@ local function platform(target)
   return os_name, arch
 end
 
----The local Neovim's release; development builds map to `stable`, because they
----have no matching release.
----@return string
+---@return string The local Neovim's release, or `stable` for a development
+---build, which has no matching release
 local function local_nvim_version()
   local v = vim.version()
   if v.prerelease then
@@ -507,7 +495,6 @@ local function install_tool(t, target, prefix, name, spec)
   local dest = quote(tool_bin(prefix, name))
   local bindir = quote(prefix .. "/bin")
 
-  -- A URL that is not an archive is the binary itself.
   if not (vim.endswith(url, ".tar.gz") or vim.endswith(url, ".tgz")) then
     return unpack(t, target, url, {
       prepare = ("mkdir -p %s"):format(bindir),
@@ -604,7 +591,7 @@ local function artifacts(t, target, prefix, cfg, tool_names, version)
   return plan
 end
 
----@param home string The target's `$HOME`, which a leading `~` resolves against
+---@param home string The target's `$HOME`, resolving a leading `~`
 local function expand_prefix(prefix, home)
   local rest = prefix:match("^~/?(.*)$")
   if rest == nil then
@@ -621,8 +608,7 @@ local function local_config_dir(cfg)
   return dir
 end
 
----Bring the target to the desired state. Idempotent, and free of UI so it can
----also run headlessly; see `M.provision`.
+---Idempotent, and free of UI so it can be driven headlessly.
 ---@param t remote.Transport
 ---@param report fun(message: string, level?: integer)
 ---@param force boolean? Reinstall binaries even when the manifest matches
@@ -693,8 +679,8 @@ end
 
 local discovered = { specs = nil, labels = nil, at = 0 }
 
----Completion calls this on every keystroke, and scanning the ssh config plus
----asking docker for containers is too slow for that.
+---Scanning the ssh config and listing containers is too slow to repeat per
+---keystroke, and completion calls this on every one.
 local function discover()
   local now = vim.uv.now()
   if discovered.specs and now - discovered.at < 2000 then
@@ -782,7 +768,6 @@ local function notify(message, level)
   vim.notify("remote.nvim: " .. message, level or vim.log.levels.INFO)
 end
 
----Run `fn` on a coroutine, surfacing anything it throws as one notification.
 local function in_coroutine(fn)
   coroutine.wrap(function()
     local ok, err = pcall(fn)
