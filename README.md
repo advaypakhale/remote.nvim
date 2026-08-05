@@ -25,7 +25,7 @@ it.
 - The same Neovim version you run locally, matched to the target's OS and architecture
 - Re-run it to push config changes; binaries are downloaded only when a version changes
 - Extra binaries, such as `ripgrep` or `fd`, if you declare them
-- About a thousand lines of Lua with no dependencies, written to be read and forked
+- About a thousand lines of Lua, no dependencies
 
 ## Requirements
 
@@ -133,8 +133,7 @@ is shown when the platforms differ.
 
 ## Contributing
 
-remote.nvim is meant to be complete. Bug fixes are welcome; for new features, fork it. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

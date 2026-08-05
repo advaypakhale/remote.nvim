@@ -2,9 +2,9 @@
 
 ## Scope
 
-remote.nvim is meant to be complete. Bug fixes are welcome. New features mostly are not — the plugin is one
-readable file, so fork it. Changes that add a dependency, assume anything about the target beyond a POSIX shell
-and `tar`, or special-case a plugin manager will not be accepted.
+remote.nvim aims to stay small. It needs `ssh`, `tar` and `curl` locally, and a POSIX shell plus the usual
+utilities on the target. Changes that add a required dependency, assume something about the target, or add
+support for a specific plugin manager are unlikely to be accepted.
 
 ## Architecture
 
