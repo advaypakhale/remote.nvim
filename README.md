@@ -2,7 +2,7 @@
 
 # remote.nvim
 
-Deploy Neovim and your config to remote development environments
+Your entire Neovim setup, in one directory on any ssh host or container
 
 [![CI](https://img.shields.io/github/actions/workflow/status/advaypakhale/remote.nvim/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?style=flat-square)](https://github.com/advaypakhale/remote.nvim/releases)
@@ -13,17 +13,19 @@ Deploy Neovim and your config to remote development environments
 
 </div>
 
-remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
-the target. Its config, data, state and cache directories all live in there, so an existing Neovim on the target keeps
-its own. You start Neovim on the target yourself, whenever you want it.
+remote.nvim installs a Neovim binary, your config, and any tools you declare into one directory under `$HOME` on
+the target. That directory is the entire footprint: no root, no packages, no daemon, no changes to the target's
+shell, dotfiles, or its own Neovim. Deleting it removes every trace. You start Neovim on the target yourself,
+whenever you want it.
 
 ## Features
 
-- Installs to any host you can `ssh` to, or any running Docker container
-- Installs the same Neovim version you run locally, matched to the target's OS and architecture
-- Re-run it to push config changes; binaries are only downloaded when the version changes
-- Installs extra binaries, such as `ripgrep` or `fd`, if you ask it to
-- No plugin dependencies
+- Any host you can `ssh` to, or any running Docker container
+- No root, no agent, and no network access required on the target — downloads fall back to your machine
+- The same Neovim version you run locally, matched to the target's OS and architecture
+- Re-run it to push config changes; binaries are downloaded only when a version changes
+- Extra binaries, such as `ripgrep` or `fd`, if you declare them
+- About a thousand lines of Lua with no dependencies, written to be read and forked
 
 ## Requirements
 
@@ -131,7 +133,8 @@ is shown when the platforms differ.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+remote.nvim is meant to be complete. Bug fixes are welcome; for new behavior, fork it and make it yours. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
