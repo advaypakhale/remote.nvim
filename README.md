@@ -13,19 +13,19 @@ Deploy Neovim and your config to remote development environments
 
 </div>
 
-remote.nvim installs a Neovim binary, your config, and any tools you declare into one directory under `$HOME` on
-the target. It needs no root, leaves nothing running, and touches nothing else — not the target's shell, dotfiles,
-or its own Neovim. Delete the directory and it's gone. You start Neovim on the target yourself, whenever you want
-it.
+remote.nvim installs a Neovim binary, your config, and any tools you declare into a single directory under `$HOME` on
+the target. Its config, data, state and cache directories all live in there, so an existing Neovim on the target keeps
+its own. It never needs root, and everything it does to the target can be undone by deleting that one directory. You
+start Neovim on the target yourself, whenever you want it.
 
 ## Features
 
-- Any host you can `ssh` to, or any running Docker container
-- No root, no agent, and no network access required on the target — downloads fall back to your machine
-- The same Neovim version you run locally, matched to the target's OS and architecture
-- Re-run it to push config changes; binaries are downloaded only when a version changes
-- Extra binaries, such as `ripgrep` or `fd`, if you declare them
-- About a thousand lines of Lua, no dependencies
+- Installs to any host you can `ssh` to, or any running Docker container
+- Installs the same Neovim version you run locally, matched to the target's OS and architecture
+- Works on targets without network access; downloads happen locally and are sent over the connection
+- Re-run it to push config changes; binaries are only downloaded when the version changes
+- Installs extra binaries, such as `ripgrep` or `fd`, if you ask it to
+- About a thousand lines of Lua, no plugin dependencies
 
 ## Requirements
 
