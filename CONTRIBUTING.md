@@ -9,9 +9,13 @@ unlikely to be accepted.
 
 ## Architecture
 
-Each transport provides `argv(script)`, returning an argument vector that runs a POSIX `sh` script on the target;
-`ssh` and `docker exec` both do this. To add a transport, implement `argv`, `label` and `launch_hint`;
-`connect` has a default.
+The plugin is one file, `lua/remote/init.lua`, ordered so it reads top to bottom; its header comment is the
+overview. `lua/remote/ssh_config.lua` parses ssh configs for completion, and `plugin/remote.lua` defines
+`:Remote`.
+
+A transport is a table of closures over one target: `argv(script)` returns an argument vector that runs a POSIX
+`sh` script there; `ssh` and `docker exec` both do this. To add a transport, write a constructor alongside
+`ssh_transport` and `docker_transport` and extend `resolve`.
 `:help remote-nvim-layout` describes what is installed on the target.
 
 ## Development
