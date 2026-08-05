@@ -3,8 +3,8 @@
 ## Scope
 
 remote.nvim is meant to be complete. Bug fixes are welcome. New features mostly are not — the plugin is one
-readable file, so fork it and make it yours. Changes that add a dependency, assume anything about the target
-beyond a POSIX shell and `tar`, or special-case a plugin manager will not be accepted.
+readable file, so fork it. Changes that add a dependency, assume anything about the target beyond a POSIX shell
+and `tar`, or special-case a plugin manager will not be accepted.
 
 ## Architecture
 

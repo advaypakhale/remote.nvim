@@ -18,10 +18,9 @@ CONTENTS                                                *remote-nvim-contents*
 remote.nvim installs a Neovim binary, your config, and any tools you declare
 into one directory under `$HOME` on a remote machine or container.
 
-That directory is the entire footprint. Nothing requires root, nothing is left
-running, and the four XDG directories are redirected into it, so an existing
-Neovim on the target keeps its own files. |:Remote| cleanup removes every
-trace.
+It needs no root and leaves nothing running. The four XDG directories are
+redirected into that one directory, so an existing Neovim on the target keeps
+its own files. |:Remote| cleanup deletes it.
 
 Starting Neovim on the target is left to you. Installing prints the command to
 run; see |remote-nvim-layout|.

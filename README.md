@@ -14,9 +14,9 @@ Your entire Neovim setup, in one directory on any ssh host or container
 </div>
 
 remote.nvim installs a Neovim binary, your config, and any tools you declare into one directory under `$HOME` on
-the target. That directory is the entire footprint: no root, no packages, no daemon, no changes to the target's
-shell, dotfiles, or its own Neovim. Deleting it removes every trace. You start Neovim on the target yourself,
-whenever you want it.
+the target. It needs no root, leaves nothing running, and touches nothing else — not the target's shell, dotfiles,
+or its own Neovim. Delete the directory and it's gone. You start Neovim on the target yourself, whenever you want
+it.
 
 ## Features
 
@@ -133,7 +133,7 @@ is shown when the platforms differ.
 
 ## Contributing
 
-remote.nvim is meant to be complete. Bug fixes are welcome; for new behavior, fork it and make it yours. See
+remote.nvim is meant to be complete. Bug fixes are welcome; for new features, fork it. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
