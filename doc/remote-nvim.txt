@@ -1,4 +1,4 @@
-*remote-nvim.txt*    Your Neovim, in one directory on a remote machine
+*remote-nvim.txt*        Deploy Neovim to remote development environments
 
 ==============================================================================
 CONTENTS                                                *remote-nvim-contents*

@@ -2,7 +2,7 @@
 
 # remote.nvim
 
-Your entire Neovim setup, in one directory on any ssh host or container
+Deploy Neovim and your config to remote development environments
 
 [![CI](https://img.shields.io/github/actions/workflow/status/advaypakhale/remote.nvim/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/advaypakhale/remote.nvim/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/advaypakhale/remote.nvim?style=flat-square)](https://github.com/advaypakhale/remote.nvim/releases)
