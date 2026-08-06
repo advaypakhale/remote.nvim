@@ -83,6 +83,8 @@ end
 
 -- Processes -------------------------------------------------------------------
 
+---Not `vim.fn.shellescape()`: its output follows the local 'shell' option,
+---and this must be POSIX for the remote `sh` regardless of it.
 ---@param s string
 ---@return string POSIX single-quoted
 local function quote(s)
@@ -351,33 +353,20 @@ local function probe(t)
   }
 end
 
----What an earlier run installed, one `key=value` per line.
+---What an earlier run installed. An unreadable manifest reads as empty, which
+---installs everything, same as a fresh target.
 ---@param t remote.Transport
 ---@return table<string, string>
 local function read_manifest(t, prefix)
   local r = exec(t, ("cat %s 2>/dev/null || true"):format(quote(prefix .. "/manifest")))
-
-  local values = {}
-  for _, line in ipairs(vim.split(r.stdout, "\n", { trimempty = true })) do
-    local key, value = line:match("^([%w_]+)=(.*)$")
-    if key then
-      values[key] = value
-    end
-  end
-  return values
+  local ok, values = pcall(vim.json.decode, r.stdout)
+  return ok and values or {}
 end
 
 ---@param t remote.Transport
 ---@param values table<string, string>
 local function write_manifest(t, prefix, values)
-  local keys = vim.tbl_keys(values)
-  table.sort(keys)
-
-  local lines = vim.tbl_map(function(key)
-    return key .. "=" .. values[key]
-  end, keys)
-
-  push_file(t, table.concat(lines, "\n") .. "\n", prefix .. "/manifest", "644")
+  push_file(t, vim.json.encode(values) .. "\n", prefix .. "/manifest", "644")
 end
 
 -- Artifacts -------------------------------------------------------------------
