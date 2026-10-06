@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/advaypakhale/remote.nvim/compare/v0.2.0...v0.2.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* follow symlinks when pushing directories ([#16](https://github.com/advaypakhale/remote.nvim/issues/16)) ([55596b4](https://github.com/advaypakhale/remote.nvim/commit/55596b4fe02a5dc5411f1043aecca19afd9c5f7a))
+
 ## [0.2.0](https://github.com/advaypakhale/remote.nvim/compare/v0.1.0...v0.2.0) (2026-07-30)
 
 
