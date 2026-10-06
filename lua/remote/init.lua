@@ -190,7 +190,7 @@ local function push_dir(t, src, dst, opts)
     error(("not a directory: %s"):format(src), 0)
   end
 
-  local tar = { "tar", "-c", "-z", "-f", "-", "--no-xattrs", "--no-acls", "--numeric-owner" }
+  local tar = { "tar", "-c", "-z", "-f", "-", "-h", "--no-xattrs", "--no-acls", "--numeric-owner" }
   if vim.uv.os_uname().sysname == "Darwin" then
     table.insert(tar, "--disable-copyfile")
   end
